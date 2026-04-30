@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from typing import Union
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
-from app.models.user import User, RefreshToken, AuditLog
+from app.models.user import User
 from app.schemas.user import (
     UserCreate, UserLogin, TokenResponse, RefreshTokenRequest, UserProfile,
     TOTPSetupResponse, TOTPVerifyRequest, TOTPDisableRequest,
@@ -29,8 +29,6 @@ from app.core.security import (
     verify_backup_code,
     create_pre_auth_token,
     verify_pre_auth_token,
-    SECRET_KEY,
-    ALGORITHM,
 )
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -93,7 +91,7 @@ def signup(user: UserCreate, request: Request, db: Session = Depends(get_db)):
 
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=Union[PreAuthTokenResponse, TokenResponse])
 async def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
 

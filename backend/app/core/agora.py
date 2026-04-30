@@ -1,8 +1,8 @@
 import os
 import time
 from pathlib import Path
-from typing import Optional
 from dotenv import load_dotenv
+import zlib
 
 # Load .env from the backend root (two levels up from this file)
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -74,10 +74,10 @@ class AgoraService:
     def generate_token_for_meeting(self, meeting_id: str, user_id: str) -> dict:
         """
         Generate token for a specific meeting.
-        Uses meeting_id as channel name and hashed user_id as uid.
+        Uses meeting_id as channel name and stable crc32 hashed user_id as uid.
         """
         # Convert user_id to integer uid (Agora requires int)
-        uid = abs(hash(user_id)) % (10 ** 8)
+        uid = zlib.crc32(user_id.encode('utf-8')) % (10 ** 8)
         
         return self.generate_rtc_token(
             channel_name=meeting_id,
@@ -86,5 +86,13 @@ class AgoraService:
             expiration_seconds=7200  # 2 hours for meetings
         )
 
-# Initialize service
-agora_service = AgoraService()
+
+# Lazy singleton — initializes on first access to avoid crashing the app
+_agora_service = None
+
+def get_agora_service() -> AgoraService:
+    """Get the Agora service singleton. Initializes on first call."""
+    global _agora_service
+    if _agora_service is None:
+        _agora_service = AgoraService()
+    return _agora_service
