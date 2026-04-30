@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from app.core.database import get_db
 from app.models.user import User
-from app.models.meeting import Meeting
+from app.models.meeting import Meeting, ActiveMeetingParticipant
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, MeetingResponse
 from app.routes.auth import get_current_user
 
-from app.core.agora import agora_service
+from app.core.agora import get_agora_service
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
@@ -145,10 +145,9 @@ async def get_meeting_call_token(
     db: Session = Depends(get_db)
 ):
     """Generate Agora token for joining meeting call"""
-    # Verify meeting exists and user has access
+    # Verify meeting exists
     meeting = db.query(Meeting).filter(
-        Meeting.id == meeting_id,
-        Meeting.user_id == current_user.id
+        Meeting.id == meeting_id
     ).first()
     
     if not meeting:
@@ -158,16 +157,71 @@ async def get_meeting_call_token(
         )
     
     try:
-        token_data = agora_service.generate_token_for_meeting(
+        token_data = get_agora_service().generate_token_for_meeting(
             meeting_id=meeting_id,
             user_id=current_user.id
         )
+        
+        # Determine role and upsert active participant
+        role = "host" if meeting.user_id == current_user.id else "attendee"
+        agora_uid = token_data["uid"]
+        
+        participant = db.query(ActiveMeetingParticipant).filter(
+            ActiveMeetingParticipant.meeting_id == meeting_id,
+            ActiveMeetingParticipant.user_id == current_user.id
+        ).first()
+        
+        if not participant:
+            participant = ActiveMeetingParticipant(
+                meeting_id=meeting_id,
+                user_id=current_user.id,
+                agora_uid=agora_uid,
+                email=current_user.email,
+                role=role
+            )
+            db.add(participant)
+        else:
+            participant.agora_uid = agora_uid
+            participant.email = current_user.email
+            participant.role = role
+        
+        db.commit()
+        
         return token_data
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate call token: {str(e)}"
         )
+
+@router.get("/{meeting_id}/participants")
+async def get_meeting_participants(
+    meeting_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get active participants for a meeting"""
+    # Verify meeting exists
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found"
+        )
+    
+    participants = db.query(ActiveMeetingParticipant).filter(
+        ActiveMeetingParticipant.meeting_id == meeting_id
+    ).all()
+    
+    return [
+        {
+            "agora_uid": p.agora_uid,
+            "email": p.email,
+            "role": p.role,
+            "joined_at": p.joined_at
+        }
+        for p in participants
+    ]
 
 @router.post("/{meeting_id}/recording")
 async def save_meeting_recording(

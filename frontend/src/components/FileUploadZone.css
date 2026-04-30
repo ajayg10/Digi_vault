@@ -1,0 +1,50 @@
+.upload-zone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-default);
+  background: var(--bg-card);
+}
+
+.upload-zone:hover,
+.upload-zone-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.upload-zone-uploading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+  color: var(--text-muted);
+  transition: color var(--transition-default);
+}
+
+.upload-zone:hover .upload-icon,
+.upload-zone-active .upload-icon {
+  color: var(--accent);
+}
+
+.upload-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.upload-browse {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.upload-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

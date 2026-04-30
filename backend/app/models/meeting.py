@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, ARRAY, ForeignKey, Text, JSON
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.sql import func
 from app.core.database import Base
 import uuid
@@ -29,3 +29,14 @@ class Meeting(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class ActiveMeetingParticipant(Base):
+    __tablename__ = "active_meeting_participants"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    meeting_id = Column(String, ForeignKey("meetings.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    agora_uid = Column(Integer, nullable=False, index=True)
+    email = Column(String, nullable=False)
+    role = Column(String(50), nullable=False, default="attendee")  # "host" or "attendee"
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
