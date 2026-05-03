@@ -52,6 +52,9 @@ export default function Meetings() {
     if (!formData.title.trim() || !formData.meeting_date) {
       return toast.error('Title and date are required');
     }
+    if (new Date(formData.meeting_date) < new Date()) {
+      return toast.error('Meeting date cannot be in the past');
+    }
     try {
       const payload = {
         ...formData,
@@ -72,6 +75,9 @@ export default function Meetings() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editModal) return;
+    if (new Date(formData.meeting_date) < new Date()) {
+      return toast.error('Meeting date cannot be in the past');
+    }
     try {
       const payload = {
         ...formData,
@@ -346,7 +352,8 @@ export default function Meetings() {
           <Input id="mt-title" label="Title" value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Team Standup" autoFocus />
           <Input id="mt-date" label="Date & Time" type="datetime-local" value={formData.meeting_date}
-            onChange={(e) => setFormData({ ...formData, meeting_date: e.target.value })} />
+            onChange={(e) => setFormData({ ...formData, meeting_date: e.target.value })} 
+            min={format(new Date(), "yyyy-MM-dd'T'HH:mm")} />
           <div style={{ display: 'flex', gap: 12 }}>
             <Input id="mt-duration" label="Duration (min)" type="number" value={formData.duration_minutes}
               onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}

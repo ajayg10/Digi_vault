@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [preAuthToken, setPreAuthToken] = useState(null);
+  const [twoFactorMethod, setTwoFactorMethod] = useState(null); // 'totp', 'email', 'both'
 
   const loadUser = useCallback(async () => {
     const token = localStorage.getItem('access_token');
@@ -41,6 +42,7 @@ export function AuthProvider({ children }) {
     // 2FA required
     if (data.requires_2fa) {
       setPreAuthToken(data.pre_auth_token);
+      setTwoFactorMethod(data.method);
       return { requires_2fa: true };
     }
 
@@ -57,6 +59,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('refresh_token', data.refresh_token);
     setPreAuthToken(null);
+    setTwoFactorMethod(null);
     await loadUser();
   };
 
@@ -70,6 +73,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('refresh_token');
     setUser(null);
     setPreAuthToken(null);
+    setTwoFactorMethod(null);
   };
 
   const logoutAll = async () => {
@@ -89,6 +93,7 @@ export function AuthProvider({ children }) {
         user,
         loading,
         preAuthToken,
+        twoFactorMethod,
         signup,
         login,
         verify2FA,
