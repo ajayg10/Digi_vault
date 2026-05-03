@@ -34,4 +34,16 @@ export const authAPI = {
 
   regenerateBackupCodes: (totp_code) =>
     api.post('/2fa/regenerate-backup-codes', { totp_code }),
+
+  enableEmail2FA: () =>
+    api.post('/2fa/email/enable'),
+
+  disableEmail2FA: () =>
+    api.post('/2fa/email/disable'),
+
+  requestVerification: () =>
+    api.post('/verify-email/request'),
+
+  confirmVerification: (token) =>
+    api.get(`/verify-email/confirm?token=${token}`),
 };

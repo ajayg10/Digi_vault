@@ -16,6 +16,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import Meetings from './pages/Meetings';
 import MeetingJoin from './pages/MeetingJoin';
 import Settings from './pages/Settings';
+import VerifyEmail from './pages/VerifyEmail';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/2fa-verify" element={<TwoFactorVerify />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* Protected routes */}
           <Route

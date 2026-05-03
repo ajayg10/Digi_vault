@@ -16,6 +16,15 @@ class User(Base):
     totp_enabled = Column(Boolean, default=False)
     backup_codes = Column(JSON, nullable=True)  # Hashed backup codes
     
+    # Email 2FA fields
+    email_2fa_enabled = Column(Boolean, default=False)
+    email_otp_code = Column(String, nullable=True)
+    email_otp_expires_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Email verification fields
+    verification_token = Column(String, nullable=True)
+    verification_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    
     # Account status
     email_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)

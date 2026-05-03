@@ -24,6 +24,7 @@ class UserProfile(BaseModel):
     email: str
     email_verified: bool
     totp_enabled: bool
+    email_2fa_enabled: bool
     created_at: datetime
     last_login_at: Optional[datetime]
     
@@ -52,6 +53,7 @@ class PreAuthTokenResponse(BaseModel):
     The frontend must POST this token + the OTP to /auth/2fa/verify-login."""
     requires_2fa: bool = True
     pre_auth_token: str   # short-lived JWT (5 min) scoped to 2fa-pending
+    method: str = "totp"  # "totp", "email", or "both"
     token_type: str = "bearer"
 
 class TOTPLoginVerifyRequest(BaseModel):

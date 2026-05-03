@@ -78,6 +78,38 @@ export default function Settings() {
     }
   };
 
+  // ─── Email 2FA ───
+  const toggleEmail2FA = async () => {
+    setLoading(true);
+    try {
+      if (user?.email_2fa_enabled) {
+        await authAPI.disableEmail2FA();
+        toast.success('Email 2FA disabled');
+      } else {
+        await authAPI.enableEmail2FA();
+        toast.success('Email 2FA enabled');
+      }
+      await refreshProfile();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle Email 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── Request Email Verification ───
+  const handleRequestVerification = async () => {
+    setLoading(true);
+    try {
+      await authAPI.requestVerification();
+      toast.success('Verification email sent!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send verification email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ─── Regenerate Backup Codes ───
   const handleRegenBackupCodes = async () => {
     if (!regenCode || regenCode.length !== 6) return toast.error('Enter a valid 6-digit code');
@@ -133,9 +165,16 @@ export default function Settings() {
           </div>
           <div className="settings-row">
             <span className="settings-label">Email Verified</span>
-            <Badge variant={user?.email_verified ? 'success' : 'warning'} dot size="sm">
-              {user?.email_verified ? 'Verified' : 'Unverified'}
-            </Badge>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Badge variant={user?.email_verified ? 'success' : 'warning'} dot size="sm">
+                {user?.email_verified ? 'Verified' : 'Unverified'}
+              </Badge>
+              {!user?.email_verified && (
+                <Button size="xs" variant="secondary" onClick={handleRequestVerification} loading={loading}>
+                  Verify Email
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Card>
@@ -145,6 +184,27 @@ export default function Settings() {
         <div className="settings-section-header">
           <HiOutlineShieldCheck className="settings-section-icon" />
           <h2>Two-Factor Authentication</h2>
+        </div>
+
+        <div className="settings-row" style={{ marginTop: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span className="settings-label">Email OTP Authentication</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Receive a 6-digit code via email when you log in.
+            </span>
+          </div>
+          <Button
+            variant={user?.email_2fa_enabled ? 'danger' : 'primary'}
+            size="sm"
+            onClick={toggleEmail2FA}
+            loading={loading}
+          >
+            {user?.email_2fa_enabled ? 'Disable Email 2FA' : 'Enable Email 2FA'}
+          </Button>
+        </div>
+
+        <div className="settings-section-header" style={{ marginTop: '1rem' }}>
+          <h3>Authenticator App</h3>
           <Badge
             variant={user?.totp_enabled ? 'success' : 'default'}
             dot

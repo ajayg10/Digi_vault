@@ -10,7 +10,7 @@ import './Auth.css';
 export default function TwoFactorVerify() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const { verify2FA, preAuthToken } = useAuth();
+  const { verify2FA, preAuthToken, twoFactorMethod } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || '/';
@@ -45,7 +45,14 @@ export default function TwoFactorVerify() {
           </div>
           <h1 className="auth-logo-title">Two-Factor Auth</h1>
           <p className="auth-subtitle">
-            Enter your 6-digit TOTP code or an 8-character backup code
+            {twoFactorMethod === 'email' ? (
+              "Check your email for the 6-digit code we just sent you."
+            ) : twoFactorMethod === 'totp' ? (
+              "Enter the 6-digit code from your authenticator app."
+            ) : (
+              "Enter the code from your email or authenticator app."
+            )}
+            {" Or use an 8-character backup code."}
           </p>
         </div>
 

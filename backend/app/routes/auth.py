@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer
 from typing import Union
 from sqlalchemy.orm import Session
@@ -62,21 +62,30 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 @router.post("/signup", response_model=dict)
-def signup(user: UserCreate, request: Request, db: Session = Depends(get_db)):
+def signup(user: UserCreate, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_password = get_password_hash(user.password)
+    
+    import secrets
+    from datetime import datetime, timedelta
+    verification_token = secrets.token_urlsafe(32)
 
     new_user = User(
         email=user.email,
         hashed_password=hashed_password,
+        verification_token=verification_token,
+        verification_token_expires_at=datetime.utcnow() + timedelta(hours=24)
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    from app.utils.email import send_verification_email
+    background_tasks.add_task(send_verification_email, new_user.email, verification_token)
 
     log_audit_event(
         db=db,
@@ -87,12 +96,12 @@ def signup(user: UserCreate, request: Request, db: Session = Depends(get_db)):
         user_agent=request.headers.get("user-agent"),
     )
 
-    return {"message": "User created successfully"}
+    return {"message": "User created successfully. Please check your email for verification."}
 
 
 
 @router.post("/login", response_model=Union[PreAuthTokenResponse, TokenResponse])
-async def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
+async def login(user: UserLogin, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
 
     if not db_user:
@@ -120,8 +129,27 @@ async def login(user: UserLogin, request: Request, db: Session = Depends(get_db)
         raise HTTPException(status_code=400, detail="Invalid email or password")
 
     # ── If 2FA is enabled, return a pre-auth token instead of full tokens ──
-    if db_user.totp_enabled:
+    if db_user.totp_enabled or getattr(db_user, "email_2fa_enabled", False):
+        if getattr(db_user, "email_2fa_enabled", False):
+            import secrets
+            from datetime import datetime, timedelta
+            from app.utils.email import send_email_otp
+            
+            otp_code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
+            db_user.email_otp_code = get_password_hash(otp_code)
+            db_user.email_otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
+            db.commit()
+            
+            background_tasks.add_task(send_email_otp, db_user.email, otp_code)
+
         pre_auth_token = create_pre_auth_token(user_id=db_user.id, email=db_user.email)
+        
+        method = "totp"
+        if getattr(db_user, "email_2fa_enabled", False) and db_user.totp_enabled:
+            method = "both"
+        elif getattr(db_user, "email_2fa_enabled", False):
+            method = "email"
+
         log_audit_event(
             db=db,
             action="LOGIN_2FA_REQUIRED",
@@ -130,7 +158,7 @@ async def login(user: UserLogin, request: Request, db: Session = Depends(get_db)
             ip_address=request.client.host,
             user_agent=request.headers.get("user-agent"),
         )
-        return PreAuthTokenResponse(pre_auth_token=pre_auth_token)
+        return PreAuthTokenResponse(pre_auth_token=pre_auth_token, method=method)
 
     reset_failed_attempts(db=db, user=db_user)
 
@@ -321,17 +349,31 @@ def verify_2fa_login(
         raise HTTPException(status_code=401, detail="User not found or inactive")
 
     # Try TOTP code first
-    totp_valid = len(body.totp_code) == 6 and verify_totp_code(db_user.totp_secret, body.totp_code)
+    totp_valid = False
+    if db_user.totp_enabled:
+        totp_valid = len(body.totp_code) == 6 and verify_totp_code(db_user.totp_secret, body.totp_code)
+
+    # Try Email OTP
+    email_otp_valid = False
+    if not totp_valid and getattr(db_user, "email_2fa_enabled", False):
+        from datetime import datetime
+        if db_user.email_otp_code and db_user.email_otp_expires_at and datetime.utcnow() < db_user.email_otp_expires_at:
+            if verify_password(body.totp_code, db_user.email_otp_code):
+                email_otp_valid = True
+                # Consume the OTP
+                db_user.email_otp_code = None
+                db_user.email_otp_expires_at = None
+                db.commit()
 
     # Fall back to backup code
     backup_valid = False
-    if not totp_valid and db_user.backup_codes:
+    if not totp_valid and not email_otp_valid and db_user.backup_codes:
         backup_valid, remaining = verify_backup_code(db_user.backup_codes, body.totp_code)
         if backup_valid:
             db_user.backup_codes = remaining  # consume the used code
             db.commit()
 
-    if not totp_valid and not backup_valid:
+    if not totp_valid and not email_otp_valid and not backup_valid:
         log_audit_event(
             db=db, action="2FA_VERIFY_FAIL", success=False,
             user_id=db_user.id, ip_address=request.client.host,
@@ -434,3 +476,68 @@ def regenerate_backup_codes(
     )
 
     return BackupCodesResponse(backup_codes=plain_codes)
+
+@router.post('/2fa/email/enable', response_model=UserProfile)
+def enable_email_2fa(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.email_2fa_enabled:
+        raise HTTPException(status_code=400, detail='Email 2FA is already enabled')
+    current_user.email_2fa_enabled = True
+    db.commit()
+    db.refresh(current_user)
+    log_audit_event(db=db, action='EMAIL_2FA_ENABLED', success=True, user_id=current_user.id)
+    return current_user
+
+@router.post('/2fa/email/disable', response_model=UserProfile)
+def disable_email_2fa(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.email_2fa_enabled:
+        raise HTTPException(status_code=400, detail='Email 2FA is not enabled')
+    current_user.email_2fa_enabled = False
+    current_user.email_otp_code = None
+    current_user.email_otp_expires_at = None
+    db.commit()
+    db.refresh(current_user)
+    log_audit_event(db=db, action='EMAIL_2FA_DISABLED', success=True, user_id=current_user.id)
+    return current_user
+
+@router.post("/verify-email/request", tags=["Verification"])
+async def request_verification(
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.email_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    import secrets
+    from datetime import datetime, timedelta
+    token = secrets.token_urlsafe(32)
+    current_user.verification_token = token
+    current_user.verification_token_expires_at = datetime.utcnow() + timedelta(hours=24)
+    db.commit()
+    
+    from app.utils.email import send_verification_email
+    background_tasks.add_task(send_verification_email, current_user.email, token)
+    
+    return {"message": "Verification email sent"}
+
+@router.get("/verify-email/confirm", tags=["Verification"])
+def confirm_verification(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    from datetime import datetime
+    user = db.query(User).filter(
+        User.verification_token == token,
+        User.verification_token_expires_at > datetime.utcnow()
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    
+    user.email_verified = True
+    user.verification_token = None
+    user.verification_token_expires_at = None
+    db.commit()
+    
+    return {"message": "Email verified successfully"}
+
