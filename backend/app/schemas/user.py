@@ -64,3 +64,12 @@ class TOTPLoginVerifyRequest(BaseModel):
 class BackupCodesResponse(BaseModel):
     """Returned when backup codes are regenerated."""
     backup_codes: List[str]
+
+# ─── Password Reset Schemas ──────────────────────────────────────────────────
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str = Field(..., min_length=8, description="New password must be at least 8 characters")

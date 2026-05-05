@@ -72,6 +72,23 @@
   gap: 20px;
 }
 
+.auth-options {
+  display: flex;
+  align-items: center;
+  margin-top: -8px;
+}
+
+.forgot-password-link {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .auth-footer {
   text-align: center;
   margin-top: 24px;

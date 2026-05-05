@@ -46,4 +46,10 @@ export const authAPI = {
 
   confirmVerification: (token) =>
     api.get(`/verify-email/confirm?token=${token}`),
+
+  forgotPassword: (email) =>
+    api.post('/forgot-password', { email }),
+
+  resetPassword: (token, password) =>
+    api.post('/reset-password', { token, password }),
 };

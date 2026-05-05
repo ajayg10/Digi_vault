@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { HiEye, HiEyeOff } from 'react-icons/hi';
 import './Input.css';
 
 export default function Input({
@@ -9,6 +11,10 @@ export default function Input({
   className = '',
   ...props
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
   return (
     <div className={`input-group ${error ? 'input-error' : ''} ${className}`}>
       {label && <label htmlFor={id} className="input-label">{label}</label>}
@@ -16,10 +22,21 @@ export default function Input({
         {icon && <span className="input-icon">{icon}</span>}
         <input
           id={id}
-          type={type}
-          className={`input-field ${icon ? 'has-icon' : ''}`}
+          type={inputType}
+          className={`input-field ${icon ? 'has-icon' : ''} ${isPassword ? 'has-password-toggle' : ''}`}
           {...props}
         />
+        {isPassword && (
+          <button
+            type="button"
+            className="password-toggle"
+            onClick={() => setShowPassword(!showPassword)}
+            tabIndex="-1"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <HiEyeOff /> : <HiEye />}
+          </button>
+        )}
       </div>
       {error && <span className="input-error-text">{error}</span>}
     </div>
