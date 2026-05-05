@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { filesAPI } from '../api/files';
 import { projectsAPI } from '../api/projects';
@@ -13,6 +14,7 @@ import {
   HiOutlineCloud,
   HiOutlineDocumentText,
   HiOutlineStar,
+  HiOutlineSparkles,
 } from 'react-icons/hi';
 import { format } from 'date-fns';
 import './Dashboard.css';
@@ -123,6 +125,45 @@ export default function Dashboard() {
         <Card className="dashboard-quota">
           <StorageQuotaBar quota={quota} />
         </Card>
+      )}
+
+      {/* Upgrade CTA for free users */}
+      {(!user?.plan || user.plan === 'free') && (
+        <Link to="/pricing" style={{ textDecoration: 'none' }}>
+          <Card className="stat-card" style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08))',
+            border: '1px solid rgba(99,102,241,0.25)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            padding: '1.25rem 1.5rem',
+            transition: 'all 200ms ease',
+          }}>
+            <div className="stat-icon" style={{
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              color: '#fff',
+            }}>
+              <HiOutlineSparkles />
+            </div>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Upgrade to Pro</span>
+              <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+                25 GB storage, unlimited files & projects — starting at ₹99/mo
+              </span>
+            </div>
+            <span style={{
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              color: '#fff',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+            }}>
+              Upgrade →
+            </span>
+          </Card>
+        </Link>
       )}
 
       {/* Recent Files & Upcoming Meetings */}

@@ -16,6 +16,17 @@ from app.routes.auth import get_current_user
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
+# Plan-aware storage limits
+PLAN_STORAGE_LIMITS = {
+    "free": 5 * 1024 * 1024 * 1024,      # 5 GB
+    "pro": 25 * 1024 * 1024 * 1024,      # 25 GB
+}
+
+PLAN_FILE_LIMITS = {
+    "free": 50,
+    "pro": -1,   # unlimited
+}
+
 # Helper functions
 def get_or_create_quota(db: Session, user_id: str) -> UserStorageQuota:
     quota = db.query(UserStorageQuota).filter(
@@ -23,20 +34,34 @@ def get_or_create_quota(db: Session, user_id: str) -> UserStorageQuota:
     ).first()
     
     if not quota:
-        quota = UserStorageQuota(user_id=user_id)
+        # Look up user's plan to set correct quota
+        user = db.query(User).filter(User.id == user_id).first()
+        plan = user.plan if user and user.plan else "free"
+        quota = UserStorageQuota(
+            user_id=user_id,
+            total_quota_bytes=PLAN_STORAGE_LIMITS.get(plan, PLAN_STORAGE_LIMITS["free"]),
+        )
         db.add(quota)
         db.commit()
         db.refresh(quota)
     
     return quota
 
-def check_quota(quota: UserStorageQuota, file_size: int):
+def check_quota(quota: UserStorageQuota, file_size: int, user_plan: str = "free"):
+    # Check storage limit
     if quota.used_bytes + file_size > quota.total_quota_bytes:
         available_mb = (quota.total_quota_bytes - quota.used_bytes) / (1024 * 1024)
         required_mb = file_size / (1024 * 1024)
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Insufficient storage. Available: {available_mb:.2f}MB, Required: {required_mb:.2f}MB"
+            detail=f"Insufficient storage. Available: {available_mb:.2f}MB, Required: {required_mb:.2f}MB. Upgrade to Pro for 25 GB storage."
+        )
+    # Check file count limit
+    file_limit = PLAN_FILE_LIMITS.get(user_plan, 50)
+    if file_limit != -1 and quota.file_count >= file_limit:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"File limit reached ({file_limit} files). Upgrade to Pro for unlimited files."
         )
 
 def update_quota(db: Session, quota: UserStorageQuota, size_delta: int, file_count_delta: int = 0):
@@ -277,7 +302,7 @@ async def upload_file(
     
     # Check quota
     quota = get_or_create_quota(db, current_user.id)
-    check_quota(quota, file_size)
+    check_quota(quota, file_size, current_user.plan or "free")
     
     # Validate folder if specified
     if folder_id:

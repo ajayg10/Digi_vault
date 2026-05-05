@@ -33,6 +33,7 @@ class User(Base):
     email_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     is_locked = Column(Boolean, default=False)
+    plan = Column(String(20), default="free")  # free | pro
     
     # Security tracking
     failed_login_attempts = Column(Integer, default=0)

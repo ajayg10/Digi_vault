@@ -1,3 +1,3 @@
-from app.routes import auth, files
+from app.routes import auth, files, subscription
 
-__all__ = ["auth", "files"]
+__all__ = ["auth", "files", "subscription"]
