@@ -1,33 +1,14 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+  "experimentalServices": {
+    "frontend": {
+      "source": "frontend",
+      "framework": "vite",
+      "outputDirectory": "dist"
     },
-    {
-      "src": "backend/app/main.py",
-      "use": "@vercel/python"
+    "backend": {
+      "source": "backend",
+      "runtime": "python3.9",
+      "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/app/main.py"
-    },
-    {
-      "src": "/(assets/.*)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/index.html"
-    }
-  ],
-  "env": {
-    "PYTHON_VERSION": "3.9"
   }
 }
