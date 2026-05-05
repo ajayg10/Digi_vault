@@ -67,6 +67,11 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             icon={<HiOutlineLockClosed />}
           />
+          <div className="auth-options">
+            <Link to="/forgot-password" style={{ marginLeft: 'auto' }} className="forgot-password-link">
+              Forgot Password?
+            </Link>
+          </div>
           <Button type="submit" fullWidth loading={loading} size="lg">
             Sign In
           </Button>

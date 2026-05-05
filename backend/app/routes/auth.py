@@ -8,6 +8,7 @@ from app.schemas.user import (
     UserCreate, UserLogin, TokenResponse, RefreshTokenRequest, UserProfile,
     TOTPSetupResponse, TOTPVerifyRequest, TOTPDisableRequest,
     PreAuthTokenResponse, TOTPLoginVerifyRequest, BackupCodesResponse,
+    ForgotPasswordRequest, ResetPasswordRequest
 )
 from app.core.security import (
     get_password_hash,
@@ -540,4 +541,65 @@ def confirm_verification(
     db.commit()
     
     return {"message": "Email verified successfully"}
+ 
+ 
+@router.post("/forgot-password")
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == body.email).first()
+    if not user:
+        # Return success even if user not found for security (don't reveal email existence)
+        return {"message": "If your email is registered, you will receive a reset link."}
+    
+    import secrets
+    from datetime import datetime, timedelta
+    token = secrets.token_urlsafe(32)
+    user.reset_password_token = token
+    user.reset_password_token_expires_at = datetime.utcnow() + timedelta(hours=1)
+    db.commit()
+    
+    from app.utils.email import send_password_reset_email
+    background_tasks.add_task(send_password_reset_email, user.email, token)
+    
+    return {"message": "If your email is registered, you will receive a reset link."}
+ 
+ 
+@router.post("/reset-password")
+def reset_password(
+    body: ResetPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    from datetime import datetime
+    user = db.query(User).filter(
+        User.reset_password_token == body.token,
+        User.reset_password_token_expires_at > datetime.utcnow()
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    user.hashed_password = get_password_hash(body.password)
+    user.reset_password_token = None
+    user.reset_password_token_expires_at = None
+    user.password_changed_at = datetime.utcnow()
+    
+    # Revoke all tokens on password change
+    revoke_all_user_tokens(db=db, user_id=user.id)
+    
+    db.commit()
+    
+    log_audit_event(
+        db=db,
+        action="PASSWORD_RESET",
+        success=True,
+        user_id=user.id,
+        ip_address=request.client.host,
+        user_agent=request.headers.get("user-agent"),
+    )
+    
+    return {"message": "Password reset successfully"}
 

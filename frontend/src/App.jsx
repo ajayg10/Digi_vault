@@ -17,6 +17,8 @@ import Meetings from './pages/Meetings';
 import MeetingJoin from './pages/MeetingJoin';
 import Settings from './pages/Settings';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 export default function App() {
   return (
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/2fa-verify" element={<TwoFactorVerify />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected routes */}
           <Route

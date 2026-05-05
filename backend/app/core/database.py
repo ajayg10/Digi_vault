@@ -2,18 +2,21 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Load .env from the backend root (two levels up from this file)
+# Load .env
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./digital_vault.db")
+DATABASE_URL: str = os.getenv("DATABASE_URL")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-)
+# Handle SQLite vs Postgres cleanly
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
@@ -24,4 +27,4 @@ def get_db():
     try:
         yield db
     finally:
-        db.close()
+        db.close()
