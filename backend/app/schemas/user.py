@@ -25,6 +25,7 @@ class UserProfile(BaseModel):
     email_verified: bool
     totp_enabled: bool
     email_2fa_enabled: bool
+    plan: str = "free"
     created_at: datetime
     last_login_at: Optional[datetime]
     

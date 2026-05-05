@@ -1,0 +1,416 @@
+/* ═══════════════════════════════════════════════════════════════
+   Pricing Page — Premium Dark Glassmorphism
+   ═══════════════════════════════════════════════════════════════ */
+
+.pricing-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.pricing-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.pricing-header .page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pricing-header .page-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ─── Billing Toggle ───────────────────────────────────────── */
+.billing-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.billing-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.billing-label.active {
+  color: var(--text-primary);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-glass-strong);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  transition: all var(--transition-default);
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--accent);
+  border-radius: 50%;
+  transition: transform var(--transition-default);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateY(-50%) translateX(24px);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.save-badge {
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ─── Plans Grid ────────────────────────────────────────────── */
+.plans-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 680px) {
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Plan Card ─────────────────────────────────────────────── */
+.plan-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  transition: all var(--transition-default);
+  overflow: hidden;
+}
+
+.plan-card:hover {
+  border-color: var(--border-default);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Pro card — gradient border glow */
+.plan-card.plan-pro {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box,
+    linear-gradient(135deg, #6366f1, #a855f7, #ec4899) border-box;
+  border: 2px solid transparent;
+}
+
+.plan-card.plan-pro::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.08));
+  z-index: 0;
+  pointer-events: none;
+}
+
+.plan-card.plan-pro:hover {
+  box-shadow:
+    0 8px 32px rgba(99, 102, 241, 0.2),
+    0 0 60px rgba(168, 85, 247, 0.1);
+}
+
+/* Popular badge */
+.popular-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: pulse-glow 3s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Current plan badge */
+.current-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.plan-card-content {
+  position: relative;
+  z-index: 1;
+}
+
+.plan-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.plan-free .plan-icon {
+  background: var(--bg-glass-strong);
+  color: var(--text-secondary);
+}
+
+.plan-pro .plan-icon {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+  color: var(--accent-hover);
+}
+
+.plan-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.plan-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Pricing */
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.price-amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.plan-pro .price-amount {
+  background: linear-gradient(135deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.price-currency {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.price-period {
+  font-size: 0.9rem;
+  color: var(--text-tertiary);
+  margin-bottom: 1.5rem;
+}
+
+.price-original {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+/* Features */
+.plan-features {
+  list-style: none;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.feature-check {
+  font-size: 0.85rem;
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.feature-cross {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* CTA Button */
+.plan-cta {
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.plan-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.plan-cta-free {
+  background: var(--bg-glass-strong);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+.plan-cta-free:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+}
+
+.plan-cta-pro {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.plan-cta-pro:hover:not(:disabled) {
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
+  transform: translateY(-1px);
+}
+
+.plan-cta-cancel {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger-soft);
+}
+
+.plan-cta-cancel:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+/* ─── Subscription Info Banner ──────────────────────────────── */
+.sub-info-banner {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sub-info-icon {
+  font-size: 1.3rem;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.sub-info-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.sub-info-text strong {
+  color: var(--text-primary);
+}
+
+/* ─── Loading ───────────────────────────────────────────────── */
+.pricing-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ─── Security Note ─────────────────────────────────────────── */
+.security-note {
+  text-align: center;
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.security-note svg {
+  color: var(--success);
+}

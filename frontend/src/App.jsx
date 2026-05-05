@@ -19,6 +19,7 @@ import Settings from './pages/Settings';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Pricing from './pages/Pricing';
 
 export default function App() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/meetings" element={<Meetings />} />
             <Route path="/meetings/join/:meetingId" element={<MeetingJoin />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/pricing" element={<Pricing />} />
           </Route>
 
           {/* Fallback */}

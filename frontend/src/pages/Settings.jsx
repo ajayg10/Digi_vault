@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../api/auth';
 import Card from '../components/ui/Card';
@@ -9,6 +10,7 @@ import Modal from '../components/ui/Modal';
 import {
   HiOutlineShieldCheck, HiOutlineUser, HiOutlineKey,
   HiOutlineLogout, HiOutlineClipboardCopy, HiOutlineRefresh,
+  HiOutlineSparkles,
 } from 'react-icons/hi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -175,6 +177,34 @@ export default function Settings() {
                 </Button>
               )}
             </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Subscription Section */}
+      <Card className="settings-section">
+        <div className="settings-section-header">
+          <HiOutlineSparkles className="settings-section-icon" />
+          <h2>Subscription</h2>
+        </div>
+        <div className="settings-rows">
+          <div className="settings-row">
+            <span className="settings-label">Current Plan</span>
+            <Badge
+              variant={user?.plan === 'pro' ? 'success' : 'default'}
+              dot
+              size="md"
+            >
+              {user?.plan === 'pro' ? 'Pro' : 'Free'}
+            </Badge>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">Manage</span>
+            <Link to="/pricing">
+              <Button size="sm" variant="secondary" icon={<HiOutlineSparkles />}>
+                {user?.plan === 'pro' ? 'Manage Plan' : 'Upgrade to Pro'}
+              </Button>
+            </Link>
           </div>
         </div>
       </Card>

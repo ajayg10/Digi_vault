@@ -11,6 +11,7 @@ import {
   HiOutlineMenu,
   HiOutlineX,
   HiOutlineShieldCheck,
+  HiOutlineSparkles,
 } from 'react-icons/hi';
 import { useState } from 'react';
 import './Sidebar.css';
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/meetings', icon: <HiOutlineCalendar />, label: 'Meetings' },
   { path: '/trash', icon: <HiOutlineTrash />, label: 'Trash' },
   { path: '/settings', icon: <HiOutlineCog />, label: 'Settings' },
+  { path: '/pricing', icon: <HiOutlineSparkles />, label: 'Pricing' },
 ];
 
 export default function Sidebar() {
