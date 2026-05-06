@@ -28,6 +28,7 @@ wheels/
 *.db
 *.sqlite
 *.sqlite3
+digital_vault.db
 
 # Storage
 storage/
