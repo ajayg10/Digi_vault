@@ -20,7 +20,7 @@ async def create_meeting(
     db: Session = Depends(get_db)
 ):
     """Create a new meeting"""
-    if meeting_data.meeting_date < datetime.utcnow():
+    if meeting_data.meeting_date.replace(tzinfo=None) < datetime.utcnow():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Meeting date cannot be in the past"
@@ -114,7 +114,7 @@ async def update_meeting(
     if "meeting_date" in update_dict:
         try:
             meeting_date = datetime.fromisoformat(update_dict["meeting_date"].replace('Z', '+00:00')) if isinstance(update_dict["meeting_date"], str) else update_dict["meeting_date"]
-            if meeting_date < datetime.utcnow():
+            if meeting_date.replace(tzinfo=None) < datetime.utcnow():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Meeting date cannot be in the past"
