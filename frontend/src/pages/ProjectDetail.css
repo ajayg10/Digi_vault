@@ -1,9 +1,19 @@
 .project-detail {
-  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pd-loading {
+  display: flex;
+  justify-content: center;
+  padding: 80px 0;
 }
 
 .pd-header {
-  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .pd-back {
@@ -13,11 +23,11 @@
   background: none;
   border: none;
   color: var(--text-tertiary);
-  font-size: 0.85rem;
+  font-size: 0.84rem;
+  font-weight: 500;
   cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 16px;
   transition: color var(--transition-fast);
+  width: fit-content;
 }
 
 .pd-back:hover {
@@ -45,8 +55,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   flex-shrink: 0;
+  border: 1px solid var(--border-default);
 }
 
 .pd-header-actions {
@@ -59,27 +70,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
 }
 
 /* Notes List */
 .notes-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .note-card {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: 16px;
+  padding: 16px 20px !important;
 }
 
 .note-card-left {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   min-width: 0;
 }
@@ -88,15 +100,19 @@
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   cursor: pointer;
   flex-shrink: 0;
-  padding: 2px;
+  padding: 1px;
   transition: color var(--transition-fast);
 }
 
+.note-check:hover {
+  color: var(--security);
+}
+
 .note-checked {
-  color: var(--success);
+  color: var(--security) !important;
 }
 
 .note-content-area {
@@ -107,13 +123,13 @@
 }
 
 .note-title {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.94rem;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
 .note-content {
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   line-height: 1.5;
   word-break: break-word;
@@ -121,7 +137,7 @@
 
 .note-completed {
   text-decoration: line-through;
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 .note-meta {
@@ -133,14 +149,14 @@
 }
 
 .note-due {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--warning);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .note-date {
-  font-size: 0.7rem;
-  color: var(--text-muted);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
 }
 
 .note-actions {
@@ -150,18 +166,19 @@
 }
 
 .note-actions button {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  color: var(--text-tertiary);
+  font-size: 1rem;
   transition: all var(--transition-fast);
 }
 
 .note-actions button:hover {
-  background: var(--bg-glass);
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 

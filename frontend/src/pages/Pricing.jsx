@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { subscriptionAPI } from '../api/subscription';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 import {
   HiOutlineSparkles,
   HiOutlineShieldCheck,
   HiOutlineCheck,
   HiOutlineX,
-  HiOutlineLightningBolt,
   HiOutlineInformationCircle,
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
@@ -21,11 +23,7 @@ export default function Pricing() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [plansRes, subRes] = await Promise.all([
         subscriptionAPI.getPlans(),
@@ -34,11 +32,15 @@ export default function Pricing() {
       setPlans(plansRes.data.plans);
       setSubscription(subRes.data);
     } catch {
-      toast.error('Failed to load plan data');
+      toast.error('Failed to load subscription data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const formatPrice = (paise) => {
     return Math.round(paise / 100);
@@ -84,8 +86,8 @@ export default function Pricing() {
           email: user?.email || '',
         },
         theme: {
-          color: '#6366f1',
-          backdrop_color: 'rgba(10, 14, 26, 0.85)',
+          color: '#C6533D',
+          backdrop_color: 'rgba(25, 24, 23, 0.85)',
         },
       };
 
@@ -144,166 +146,171 @@ export default function Pricing() {
   return (
     <div className="pricing-page animate-fade-in">
       <div className="pricing-header">
-        <h1 className="page-title">Choose Your Plan</h1>
+        <h1 className="page-title">Workspace Memberships</h1>
         <p className="page-subtitle">
-          Unlock the full power of DigiVault with Pro. More storage, unlimited files, and premium features.
+          Transparent, private data vault storage designed for professionals who value security.
         </p>
       </div>
 
-      {/* Billing Toggle */}
-      <div className="billing-toggle">
+      {/* Billing Cycle Toggle */}
+      <div className="billing-toggle-row">
         <span className={`billing-label ${billingCycle === 'monthly' ? 'active' : ''}`}>
-          Monthly
+          Billed Monthly
         </span>
         <label className="toggle-switch">
           <input
             type="checkbox"
             checked={billingCycle === 'yearly'}
             onChange={(e) => setBillingCycle(e.target.checked ? 'yearly' : 'monthly')}
+            aria-label="Toggle annual billing"
           />
           <span className="toggle-slider" />
         </label>
         <span className={`billing-label ${billingCycle === 'yearly' ? 'active' : ''}`}>
-          Yearly
+          Billed Yearly
         </span>
-        <span className="save-badge">Save 16%</span>
+        <span className="save-chip">Save 16%</span>
       </div>
 
       {/* Plans Grid */}
-      <div className="plans-grid stagger-children">
-        {/* Free Card */}
-        <div className="plan-card plan-free">
-          {currentPlan === 'free' && <span className="current-badge">Current Plan</span>}
-          <div className="plan-card-content">
-            <div className="plan-icon">
-              <HiOutlineShieldCheck />
+      <div className="plans-grid">
+        {/* Free Plan */}
+        <Card className={`plan-card ${currentPlan === 'free' ? 'plan-current' : ''}`}>
+          {currentPlan === 'free' && (
+            <div className="current-badge-wrap">
+              <Badge variant="default" size="sm">
+                Current Plan
+              </Badge>
             </div>
-            <h2 className="plan-name">Free</h2>
-            <p className="plan-description">Get started with essential features</p>
-
-            <div className="plan-price">
-              <span className="price-currency">₹</span>
-              <span className="price-amount">0</span>
-            </div>
-            <p className="price-period">Free forever</p>
-
-            <ul className="plan-features">
-              {freePlan?.features.map((f, i) => (
-                <li key={i}>
-                  <HiOutlineCheck className="feature-check" />
-                  {f}
-                </li>
-              ))}
-              <li>
-                <HiOutlineX className="feature-cross" />
-                Advanced analytics
-              </li>
-              <li>
-                <HiOutlineX className="feature-cross" />
-                Priority support
-              </li>
-            </ul>
-
-            <button
-              className="plan-cta plan-cta-free"
-              disabled={currentPlan === 'free'}
-            >
-              {currentPlan === 'free' ? 'Your Current Plan' : 'Downgrade'}
-            </button>
-          </div>
-        </div>
-
-        {/* Pro Card */}
-        <div className="plan-card plan-pro">
-          {isProActive ? (
-            <span className="current-badge">Current Plan</span>
-          ) : (
-            <span className="popular-badge">✦ Popular</span>
           )}
-          <div className="plan-card-content">
-            <div className="plan-icon">
-              <HiOutlineSparkles />
-            </div>
-            <h2 className="plan-name">Pro</h2>
-            <p className="plan-description">Everything you need, no limits</p>
+          <div className="plan-head">
+            <h2 className="plan-name">Free Vault</h2>
+            <p className="plan-summary">Essential encrypted storage for personal use.</p>
+          </div>
 
-            <div className="plan-price">
-              <span className="price-currency">₹</span>
-              <span className="price-amount">{proPrice ? formatPrice(proPrice) : '—'}</span>
-              {billingCycle === 'yearly' && proPlan && (
-                <span className="price-original">
-                  ₹{formatPrice(proPlan.price_monthly * 12)}
-                </span>
-              )}
-            </div>
-            <p className="price-period">
-              {billingCycle === 'monthly' ? '/month' : '/year'}
-              {monthlyEquivalent && ` (₹${monthlyEquivalent}/mo)`}
-            </p>
+          <div className="plan-pricing-block">
+            <span className="price-symbol">₹</span>
+            <span className="price-figure">0</span>
+            <span className="price-cadence">/ forever</span>
+          </div>
 
-            <ul className="plan-features">
-              {proPlan?.features.map((f, i) => (
-                <li key={i}>
-                  <HiOutlineCheck className="feature-check" />
-                  {f}
-                </li>
-              ))}
-            </ul>
+          <ul className="plan-feature-list">
+            {freePlan?.features.map((f, i) => (
+              <li key={i}>
+                <HiOutlineCheck className="feat-check" />
+                <span>{f}</span>
+              </li>
+            ))}
+            <li className="feat-disabled">
+              <HiOutlineX className="feat-cross" />
+              <span>Priority multi-region replication</span>
+            </li>
+            <li className="feat-disabled">
+              <HiOutlineX className="feat-cross" />
+              <span>Direct engineer support</span>
+            </li>
+          </ul>
 
+          <Button
+            variant="secondary"
+            fullWidth
+            disabled
+            style={{ marginTop: 'auto' }}
+          >
+            {currentPlan === 'free' ? 'Active Membership' : 'Free Tier'}
+          </Button>
+        </Card>
+
+        {/* Pro Plan */}
+        <Card className={`plan-card plan-featured ${isProActive ? 'plan-current' : ''}`}>
+          <div className="current-badge-wrap">
             {isProActive ? (
-              <button
-                className="plan-cta plan-cta-cancel"
-                onClick={handleCancel}
-                disabled={processing}
-              >
-                {processing ? 'Processing…' : 'Cancel Subscription'}
-              </button>
+              <Badge variant="success" dot size="sm">
+                Active Pro
+              </Badge>
             ) : (
-              <button
-                className="plan-cta plan-cta-pro"
-                onClick={handleUpgrade}
-                disabled={processing}
-              >
-                {processing ? (
-                  'Processing…'
-                ) : (
-                  <>
-                    <HiOutlineLightningBolt /> Upgrade to Pro
-                  </>
-                )}
-              </button>
+              <span className="featured-chip">RECOMMENDED</span>
             )}
           </div>
-        </div>
+
+          <div className="plan-head">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <HiOutlineSparkles style={{ color: 'var(--accent)', fontSize: '1.2rem' }} />
+              <h2 className="plan-name">DigiVault Pro</h2>
+            </div>
+            <p className="plan-summary">Extensive capacity, unlimited workspaces, and priority tools.</p>
+          </div>
+
+          <div className="plan-pricing-block">
+            <span className="price-symbol">₹</span>
+            <span className="price-figure">
+              {proPrice ? formatPrice(proPrice) : '—'}
+            </span>
+            <span className="price-cadence">
+              {billingCycle === 'monthly' ? '/ month' : '/ year'}
+              {monthlyEquivalent && ` (₹${monthlyEquivalent}/mo)`}
+            </span>
+          </div>
+
+          <ul className="plan-feature-list">
+            {proPlan?.features.map((f, i) => (
+              <li key={i}>
+                <HiOutlineCheck className="feat-check" />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          {isProActive ? (
+            <Button
+              variant="danger"
+              fullWidth
+              onClick={handleCancel}
+              loading={processing}
+              style={{ marginTop: 'auto' }}
+            >
+              Cancel Subscription
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              fullWidth
+              size="lg"
+              onClick={handleUpgrade}
+              loading={processing}
+              style={{ marginTop: 'auto' }}
+            >
+              Upgrade to Pro
+            </Button>
+          )}
+        </Card>
       </div>
 
-      {/* Subscription info banner */}
+      {/* Subscription Active Info */}
       {isProActive && subscription?.current_period_end && (
-        <div className="sub-info-banner">
-          <HiOutlineInformationCircle className="sub-info-icon" />
-          <p className="sub-info-text">
-            Your <strong>Pro</strong> plan is active until{' '}
-            <strong>{format(new Date(subscription.current_period_end), 'PPP')}</strong>.
-            {subscription.billing_cycle === 'monthly' ? ' Billed monthly.' : ' Billed yearly.'}
-          </p>
+        <div className="pricing-notice-banner banner-sage">
+          <HiOutlineInformationCircle />
+          <span>
+            Your <strong>Pro</strong> membership is active through{' '}
+            <strong>{format(new Date(subscription.current_period_end), 'PPP')}</strong> (
+            {subscription.billing_cycle === 'monthly' ? 'Monthly billing' : 'Annual billing'}).
+          </span>
         </div>
       )}
 
       {isProCancelled && subscription?.current_period_end && (
-        <div className="sub-info-banner">
-          <HiOutlineInformationCircle className="sub-info-icon" />
-          <p className="sub-info-text">
-            Your subscription has been cancelled. You'll keep <strong>Pro</strong> access until{' '}
-            <strong>{format(new Date(subscription.current_period_end), 'PPP')}</strong>,
-            then revert to the Free plan.
-          </p>
+        <div className="pricing-notice-banner banner-amber">
+          <HiOutlineInformationCircle />
+          <span>
+            Subscription cancelled. You retain <strong>Pro</strong> features until{' '}
+            <strong>{format(new Date(subscription.current_period_end), 'PPP')}</strong>, after which your account reverts to Free.
+          </span>
         </div>
       )}
 
-      {/* Security note */}
-      <div className="security-note">
+      <div className="pricing-footer-note">
         <HiOutlineShieldCheck />
-        <span>Payments are secured by Razorpay. We never store your card details.</span>
+        <span>Payments processed securely via Razorpay PCI-DSS certified checkout. No sensitive card data is stored on DigiVault servers.</span>
       </div>
     </div>
   );

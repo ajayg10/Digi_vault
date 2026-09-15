@@ -33,8 +33,8 @@ export default function ResetPassword() {
     try {
       await authAPI.resetPassword(token, password);
       setSuccess(true);
-      toast.success('Password reset successfully!');
-      setTimeout(() => navigate('/login'), 5000);
+      toast.success('Password updated successfully!');
+      setTimeout(() => navigate('/login'), 4000);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to reset password');
     } finally {
@@ -45,21 +45,24 @@ export default function ResetPassword() {
   if (success) {
     return (
       <div className="auth-page">
-        <div className="auth-bg-gradient" />
-        <div className="auth-card animate-fade-in-scale">
+        <div className="auth-card animate-fade-in-scale" style={{ textAlign: 'center' }}>
           <div className="auth-logo">
-            <div className="auth-logo-icon auth-logo-icon-2fa">
-              <HiOutlineCheckCircle />
+            <div className="auth-brand-emblem">
+              <HiOutlineCheckCircle style={{ fontSize: '2rem', color: 'var(--security)' }} />
             </div>
-            <h1 className="auth-logo-title">Password Reset!</h1>
+            <h1 className="auth-logo-title">Password Reset Complete</h1>
             <p className="auth-subtitle">
-              Your password has been updated successfully. You will be redirected to the login page shortly.
+              Your credentials have been securely updated. You will be redirected to the sign in page momentarily.
             </p>
           </div>
           <div style={{ marginTop: '24px' }}>
-            <Button fullWidth onClick={() => navigate('/login')}>
-              Go to Login Now
+            <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/login')}>
+              Proceed to Sign In
             </Button>
+          </div>
+          <div className="auth-trust-badge">
+            <HiOutlineShieldCheck />
+            <span>Vault Credentials Secured</span>
           </div>
         </div>
       </div>
@@ -68,14 +71,18 @@ export default function ResetPassword() {
 
   return (
     <div className="auth-page">
-      <div className="auth-bg-gradient" />
       <div className="auth-card animate-fade-in-scale">
         <div className="auth-logo">
-          <div className="auth-logo-icon">
-            <HiOutlineShieldCheck />
+          <div className="auth-brand-emblem">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="24" height="24" rx="6" fill="var(--accent)" />
+              <path d="M12 5.5L18 8.2V13C18 16.5 15.4 19.5 12 20.5C8.6 19.5 6 16.5 6 13V8.2L12 5.5Z" stroke="#FFFDF8" strokeWidth="1.5" strokeLinejoin="round" />
+              <circle cx="12" cy="12.5" r="2.2" fill="#FFFDF8" />
+              <path d="M12 14.7V16.8" stroke="#FFFDF8" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </div>
-          <h1 className="auth-logo-title">Reset Password</h1>
-          <p className="auth-subtitle">Create a strong new password for your account.</p>
+          <h1 className="auth-logo-title">Create New Password</h1>
+          <p className="auth-subtitle">Establish a strong password to protect your vault data.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -83,30 +90,36 @@ export default function ResetPassword() {
             id="reset-password"
             label="New Password"
             type="password"
-            placeholder="Min 8 characters"
+            placeholder="Minimum 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             icon={<HiOutlineLockClosed />}
+            autoFocus
             required
           />
           <Input
             id="reset-confirm"
             label="Confirm New Password"
             type="password"
-            placeholder="••••••••"
+            placeholder="Repeat new password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             icon={<HiOutlineLockClosed />}
             required
           />
           <Button type="submit" fullWidth loading={loading} size="lg">
-            Update Password
+            Update & Secure Vault
           </Button>
         </form>
 
         <p className="auth-footer">
-          Wait, I remembered! <Link to="/login">Back to Sign in</Link>
+          Remembered your password? <Link to="/login">Back to Sign in</Link>
         </p>
+
+        <div className="auth-trust-badge">
+          <HiOutlineShieldCheck />
+          <span>Encrypted Key Generation</span>
+        </div>
       </div>
     </div>
   );

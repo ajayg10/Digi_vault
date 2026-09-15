@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectsAPI } from '../api/projects';
 import Card from '../components/ui/Card';
@@ -9,16 +9,22 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import {
-  HiOutlinePlus, HiOutlineArrowLeft, HiOutlineTrash,
-  HiOutlinePencil, HiOutlineLightBulb, HiOutlineCheckCircle,
-  HiOutlineLink, HiOutlineDocumentText, HiCheckCircle,
+  HiOutlinePlus,
+  HiOutlineArrowLeft,
+  HiOutlineTrash,
+  HiOutlinePencil,
+  HiOutlineLightBulb,
+  HiOutlineCheckCircle,
+  HiOutlineLink,
+  HiOutlineDocumentText,
+  HiCheckCircle,
 } from 'react-icons/hi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import './ProjectDetail.css';
 
 const NOTE_TYPES = [
-  { value: null, label: 'All', icon: null },
+  { value: null, label: 'All Items', icon: null },
   { value: 'note', label: 'Notes', icon: <HiOutlineDocumentText /> },
   { value: 'idea', label: 'Ideas', icon: <HiOutlineLightBulb /> },
   { value: 'task', label: 'Tasks', icon: <HiOutlineCheckCircle /> },
@@ -27,6 +33,7 @@ const NOTE_TYPES = [
 
 const PRIORITY_LABELS = ['None', 'Low', 'Medium', 'High'];
 const PRIORITY_VARIANTS = ['default', 'info', 'warning', 'danger'];
+const PRESET_COLORS = ['#C6533D', '#D98A55', '#547A67', '#B9823D', '#3E5C76', '#5C5449'];
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -40,20 +47,24 @@ export default function ProjectDetail() {
   const [deleteNote, setDeleteNote] = useState(null);
   const [editProject, setEditProject] = useState(false);
   const [noteForm, setNoteForm] = useState({
-    title: '', content: '', note_type: 'note', priority: 0, due_date: '',
+    title: '',
+    content: '',
+    note_type: 'note',
+    priority: 0,
+    due_date: '',
   });
   const [projectForm, setProjectForm] = useState({});
 
-  useEffect(() => { loadProject(); }, [id]);
-  useEffect(() => { if (project) loadNotes(); }, [noteFilter, project]);
-
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     try {
       const { data } = await projectsAPI.get(id);
       setProject(data);
       setProjectForm({
-        title: data.title, description: data.description || '',
-        status: data.status, color: data.color, icon: data.icon || '📁',
+        title: data.title,
+        description: data.description || '',
+        status: data.status,
+        color: data.color,
+        icon: data.icon || '📁',
       });
     } catch {
       toast.error('Project not found');
@@ -61,16 +72,24 @@ export default function ProjectDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     try {
       const { data } = await projectsAPI.listNotes(id, noteFilter);
       setNotes(data);
     } catch {
       toast.error('Failed to load notes');
     }
-  };
+  }, [id, noteFilter]);
+
+  useEffect(() => {
+    loadProject();
+  }, [loadProject]);
+
+  useEffect(() => {
+    if (project) loadNotes();
+  }, [project, loadNotes]);
 
   const handleCreateNote = async (e) => {
     e.preventDefault();
@@ -139,14 +158,23 @@ export default function ProjectDetail() {
 
   const openEditNote = (note) => {
     setNoteForm({
-      title: note.title || '', content: note.content,
-      note_type: note.note_type, priority: note.priority,
+      title: note.title || '',
+      content: note.content,
+      note_type: note.note_type,
+      priority: note.priority,
       due_date: note.due_date || '',
     });
     setEditNote(note);
   };
 
-  if (loading) return <div className="files-loading"><div className="spinner" /></div>;
+  if (loading) {
+    return (
+      <div className="pd-loading">
+        <div className="spinner" />
+      </div>
+    );
+  }
+
   if (!project) return null;
 
   return (
@@ -158,58 +186,79 @@ export default function ProjectDetail() {
         </button>
         <div className="pd-header-row">
           <div className="pd-header-info">
-            <div className="pd-icon" style={{ background: project.color + '22', color: project.color }}>
+            <div
+              className="pd-icon"
+              style={{
+                backgroundColor: project.color ? `${project.color}18` : 'var(--bg-secondary)',
+                color: project.color || 'var(--accent)',
+              }}
+            >
               {project.icon || '📁'}
             </div>
             <div>
               <h1 className="page-title">{project.title}</h1>
-              {project.description && <p className="page-subtitle">{project.description}</p>}
+              {project.description && (
+                <p className="page-subtitle">{project.description}</p>
+              )}
             </div>
           </div>
           <div className="pd-header-actions">
             <Badge
-              variant={project.status === 'active' ? 'success' : project.status === 'completed' ? 'primary' : 'default'}
+              variant={
+                project.status === 'active'
+                  ? 'success'
+                  : project.status === 'completed'
+                  ? 'primary'
+                  : 'default'
+              }
               dot
               size="md"
             >
               {project.status}
             </Badge>
-            <Button variant="secondary" size="sm" icon={<HiOutlinePencil />} onClick={() => setEditProject(true)}>
-              Edit
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<HiOutlinePencil />}
+              onClick={() => setEditProject(true)}
+            >
+              Edit Project
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Notes Section */}
+      {/* Notes Section Toolbar */}
       <div className="pd-notes-header">
-        <h2 className="section-title">Notes ({notes.length})</h2>
+        <h2 className="section-title">Workspace Notes & Tasks ({notes.length})</h2>
         <Button icon={<HiOutlinePlus />} size="sm" onClick={() => setNoteModal(true)}>
-          Add Note
+          Add Item
         </Button>
       </div>
 
       {/* Type Filter */}
-      <div className="project-filters" style={{ marginBottom: 20 }}>
+      <div className="project-filters" style={{ marginBottom: 18 }}>
         {NOTE_TYPES.map((t) => (
           <button
             key={t.label}
             className={`filter-btn ${noteFilter === t.value ? 'filter-active' : ''}`}
             onClick={() => setNoteFilter(t.value)}
           >
-            {t.icon} {t.label}
+            {t.icon && <span style={{ marginRight: 5, verticalAlign: 'middle' }}>{t.icon}</span>}
+            {t.label}
           </button>
         ))}
       </div>
 
+      {/* Notes List */}
       {notes.length === 0 ? (
         <EmptyState
           icon={<HiOutlineDocumentText />}
-          title="No notes yet"
-          description="Add notes, ideas, tasks, or links to this project"
+          title="No items in this category"
+          description="Capture thoughts, task checklists, or research links for this project."
           action={
             <Button icon={<HiOutlinePlus />} size="sm" onClick={() => setNoteModal(true)}>
-              Add Note
+              Add First Item
             </Button>
           }
         />
@@ -222,6 +271,8 @@ export default function ProjectDetail() {
                   <button
                     className={`note-check ${note.completed ? 'note-checked' : ''}`}
                     onClick={() => handleToggleComplete(note)}
+                    title={note.completed ? 'Mark incomplete' : 'Mark complete'}
+                    aria-label="Toggle task completion"
                   >
                     {note.completed ? <HiCheckCircle /> : <HiOutlineCheckCircle />}
                   </button>
@@ -236,28 +287,41 @@ export default function ProjectDetail() {
                     {note.content}
                   </p>
                   <div className="note-meta">
-                    <Badge variant={
-                      note.note_type === 'task' ? 'warning' :
-                      note.note_type === 'idea' ? 'info' :
-                      note.note_type === 'link' ? 'primary' : 'default'
-                    } size="sm">
+                    <Badge
+                      variant={
+                        note.note_type === 'task'
+                          ? 'warning'
+                          : note.note_type === 'idea'
+                          ? 'info'
+                          : note.note_type === 'link'
+                          ? 'primary'
+                          : 'default'
+                      }
+                      size="sm"
+                    >
                       {note.note_type}
                     </Badge>
                     {note.priority > 0 && (
                       <Badge variant={PRIORITY_VARIANTS[note.priority]} size="sm">
-                        {PRIORITY_LABELS[note.priority]}
+                        {PRIORITY_LABELS[note.priority]} Priority
                       </Badge>
                     )}
                     {note.due_date && (
-                      <span className="note-due">Due: {note.due_date}</span>
+                      <span className="note-due">Due {note.due_date}</span>
                     )}
-                    <span className="note-date">{format(new Date(note.created_at), 'MMM d')}</span>
+                    <span className="note-date">
+                      {format(new Date(note.created_at), 'MMM d, yyyy')}
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="note-actions">
-                <button onClick={() => openEditNote(note)} title="Edit"><HiOutlinePencil /></button>
-                <button onClick={() => setDeleteNote(note)} title="Delete"><HiOutlineTrash /></button>
+                <button onClick={() => openEditNote(note)} title="Edit note">
+                  <HiOutlinePencil />
+                </button>
+                <button onClick={() => setDeleteNote(note)} title="Delete note">
+                  <HiOutlineTrash />
+                </button>
               </div>
             </Card>
           ))}
@@ -265,17 +329,31 @@ export default function ProjectDetail() {
       )}
 
       {/* Create Note Modal */}
-      <Modal isOpen={noteModal} onClose={() => setNoteModal(false)} title="Add Note">
+      <Modal isOpen={noteModal} onClose={() => setNoteModal(false)} title="Add Workspace Item">
         <form onSubmit={handleCreateNote} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input id="note-title" label="Title (optional)" value={noteForm.title}
-            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })} placeholder="Note title..." />
-          <TextArea id="note-content" label="Content" value={noteForm.content}
-            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })} placeholder="Write your note..." />
+          <Input
+            id="note-title-input"
+            label="Title (optional)"
+            value={noteForm.title}
+            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+            placeholder="e.g. Contract review findings"
+          />
+          <TextArea
+            id="note-content-input"
+            label="Content"
+            value={noteForm.content}
+            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+            placeholder="Write notes, checklist points, or URL links..."
+            required
+          />
           <div style={{ display: 'flex', gap: 12 }}>
             <div className="input-group" style={{ flex: 1 }}>
               <label className="input-label">Type</label>
-              <select className="input-field" value={noteForm.note_type}
-                onChange={(e) => setNoteForm({ ...noteForm, note_type: e.target.value })}>
+              <select
+                className="input-field"
+                value={noteForm.note_type}
+                onChange={(e) => setNoteForm({ ...noteForm, note_type: e.target.value })}
+              >
                 <option value="note">Note</option>
                 <option value="idea">Idea</option>
                 <option value="task">Task</option>
@@ -284,8 +362,11 @@ export default function ProjectDetail() {
             </div>
             <div className="input-group" style={{ flex: 1 }}>
               <label className="input-label">Priority</label>
-              <select className="input-field" value={noteForm.priority}
-                onChange={(e) => setNoteForm({ ...noteForm, priority: parseInt(e.target.value) })}>
+              <select
+                className="input-field"
+                value={noteForm.priority}
+                onChange={(e) => setNoteForm({ ...noteForm, priority: parseInt(e.target.value) })}
+              >
                 <option value={0}>None</option>
                 <option value={1}>Low</option>
                 <option value={2}>Medium</option>
@@ -293,24 +374,42 @@ export default function ProjectDetail() {
               </select>
             </div>
           </div>
-          <Input id="note-due" label="Due Date" type="date" value={noteForm.due_date}
-            onChange={(e) => setNoteForm({ ...noteForm, due_date: e.target.value })} />
-          <Button type="submit" fullWidth>Add Note</Button>
+          <Input
+            id="note-due-input"
+            label="Due Date (optional)"
+            type="date"
+            value={noteForm.due_date}
+            onChange={(e) => setNoteForm({ ...noteForm, due_date: e.target.value })}
+          />
+          <Button type="submit" fullWidth>
+            Save Item
+          </Button>
         </form>
       </Modal>
 
       {/* Edit Note Modal */}
-      <Modal isOpen={!!editNote} onClose={() => setEditNote(null)} title="Edit Note">
+      <Modal isOpen={!!editNote} onClose={() => setEditNote(null)} title="Edit Item">
         <form onSubmit={handleUpdateNote} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input id="edit-note-title" label="Title" value={noteForm.title}
-            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })} />
-          <TextArea id="edit-note-content" label="Content" value={noteForm.content}
-            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })} />
+          <Input
+            id="edit-note-title-input"
+            label="Title"
+            value={noteForm.title}
+            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+          />
+          <TextArea
+            id="edit-note-content-input"
+            label="Content"
+            value={noteForm.content}
+            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+          />
           <div style={{ display: 'flex', gap: 12 }}>
             <div className="input-group" style={{ flex: 1 }}>
               <label className="input-label">Type</label>
-              <select className="input-field" value={noteForm.note_type}
-                onChange={(e) => setNoteForm({ ...noteForm, note_type: e.target.value })}>
+              <select
+                className="input-field"
+                value={noteForm.note_type}
+                onChange={(e) => setNoteForm({ ...noteForm, note_type: e.target.value })}
+              >
                 <option value="note">Note</option>
                 <option value="idea">Idea</option>
                 <option value="task">Task</option>
@@ -319,8 +418,11 @@ export default function ProjectDetail() {
             </div>
             <div className="input-group" style={{ flex: 1 }}>
               <label className="input-label">Priority</label>
-              <select className="input-field" value={noteForm.priority}
-                onChange={(e) => setNoteForm({ ...noteForm, priority: parseInt(e.target.value) })}>
+              <select
+                className="input-field"
+                value={noteForm.priority}
+                onChange={(e) => setNoteForm({ ...noteForm, priority: parseInt(e.target.value) })}
+              >
                 <option value={0}>None</option>
                 <option value={1}>Low</option>
                 <option value={2}>Medium</option>
@@ -328,35 +430,58 @@ export default function ProjectDetail() {
               </select>
             </div>
           </div>
-          <Button type="submit" fullWidth>Save Changes</Button>
+          <Button type="submit" fullWidth>
+            Save Changes
+          </Button>
         </form>
       </Modal>
 
       {/* Edit Project Modal */}
-      <Modal isOpen={editProject} onClose={() => setEditProject(false)} title="Edit Project">
+      <Modal isOpen={editProject} onClose={() => setEditProject(false)} title="Edit Project Details">
         <form onSubmit={handleUpdateProject} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input id="ep-title" label="Title" value={projectForm.title || ''}
-            onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })} />
-          <Input id="ep-desc" label="Description" value={projectForm.description || ''}
-            onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })} />
+          <Input
+            id="ep-title-input"
+            label="Title"
+            value={projectForm.title || ''}
+            onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+          />
+          <Input
+            id="ep-desc-input"
+            label="Description"
+            value={projectForm.description || ''}
+            onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+          />
           <div style={{ display: 'flex', gap: 12 }}>
             <div className="input-group" style={{ flex: 1 }}>
               <label className="input-label">Status</label>
-              <select className="input-field" value={projectForm.status || 'active'}
-                onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}>
+              <select
+                className="input-field"
+                value={projectForm.status || 'active'}
+                onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
+              >
                 <option value="active">Active</option>
                 <option value="completed">Completed</option>
                 <option value="archived">Archived</option>
               </select>
             </div>
-            <div className="input-group">
-              <label className="input-label">Color</label>
-              <input type="color" value={projectForm.color || '#6366f1'}
-                onChange={(e) => setProjectForm({ ...projectForm, color: e.target.value })}
-                className="color-picker" />
+            <div className="input-group" style={{ flex: 1 }}>
+              <label className="input-label">Accent Color</label>
+              <div className="color-choices">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`color-swatch ${projectForm.color === c ? 'selected' : ''}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => setProjectForm({ ...projectForm, color: c })}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-          <Button type="submit" fullWidth>Save Project</Button>
+          <Button type="submit" fullWidth>
+            Save Project
+          </Button>
         </form>
       </Modal>
 
@@ -364,8 +489,9 @@ export default function ProjectDetail() {
         isOpen={!!deleteNote}
         onClose={() => setDeleteNote(null)}
         onConfirm={handleDeleteNote}
-        title="Delete Note"
-        message="Are you sure you want to delete this note?"
+        title="Delete Item"
+        message="Are you sure you want to delete this workspace item?"
+        confirmText="Delete"
       />
     </div>
   );

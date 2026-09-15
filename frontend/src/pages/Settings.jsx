@@ -1,137 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { authAPI } from '../api/auth';
+import { filesAPI } from '../api/files';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
+import StorageQuotaBar from '../components/StorageQuotaBar';
 import {
-  HiOutlineShieldCheck, HiOutlineUser, HiOutlineKey,
-  HiOutlineLogout, HiOutlineClipboardCopy, HiOutlineRefresh,
+  HiOutlineUser,
+  HiOutlineShieldCheck,
+  HiOutlineColorSwatch,
+  HiOutlineCloud,
   HiOutlineSparkles,
+  HiOutlineLogout,
+  HiOutlineSun,
+  HiOutlineMoon,
+  HiOutlineCheck,
 } from 'react-icons/hi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import './Settings.css';
 
-export default function Settings() {
-  const { user, logoutAll, refreshProfile } = useAuth();
+const TABS = [
+  { id: 'profile', label: 'Account & Profile', icon: <HiOutlineUser /> },
+  { id: 'appearance', label: 'Appearance', icon: <HiOutlineColorSwatch /> },
+  { id: 'storage', label: 'Storage & Quota', icon: <HiOutlineCloud /> },
+  { id: 'subscription', label: 'Subscription & Billing', icon: <HiOutlineSparkles /> },
+  { id: 'security', label: 'Security Overview', icon: <HiOutlineShieldCheck /> },
+];
 
-  // 2FA states
-  const [setupData, setSetupData] = useState(null); // { totp_uri, qr_code_base64, backup_codes }
-  const [setupStep, setSetupStep] = useState(0); // 0=none, 1=show QR, 2=verify
-  const [enableCode, setEnableCode] = useState('');
-  const [disableModal, setDisableModal] = useState(false);
-  const [disablePassword, setDisablePassword] = useState('');
-  const [disableCode, setDisableCode] = useState('');
-  const [regenModal, setRegenModal] = useState(false);
-  const [regenCode, setRegenCode] = useState('');
-  const [backupCodes, setBackupCodes] = useState(null);
+export default function Settings() {
+  const { user, logoutAll } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [activeTab, setActiveTab] = useState('profile');
+  const [quota, setQuota] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ─── Setup 2FA ───
-  const handleSetup2FA = async () => {
-    setLoading(true);
-    try {
-      const { data } = await authAPI.setup2FA();
-      setSetupData(data);
-      setSetupStep(1);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Setup failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEnable2FA = async () => {
-    if (!enableCode || enableCode.length !== 6) return toast.error('Enter a valid 6-digit code');
-    setLoading(true);
-    try {
-      await authAPI.enable2FA(enableCode);
-      toast.success('2FA enabled successfully!');
-      setSetupStep(0);
-      setSetupData(null);
-      setEnableCode('');
-      await refreshProfile();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Verification failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ─── Disable 2FA ───
-  const handleDisable2FA = async () => {
-    if (!disablePassword || !disableCode) return toast.error('Fill in all fields');
-    setLoading(true);
-    try {
-      await authAPI.disable2FA(disablePassword, disableCode);
-      toast.success('2FA disabled');
-      setDisableModal(false);
-      setDisablePassword('');
-      setDisableCode('');
-      await refreshProfile();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to disable');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ─── Email 2FA ───
-  const toggleEmail2FA = async () => {
-    setLoading(true);
-    try {
-      if (user?.email_2fa_enabled) {
-        await authAPI.disableEmail2FA();
-        toast.success('Email 2FA disabled');
-      } else {
-        await authAPI.enableEmail2FA();
-        toast.success('Email 2FA enabled');
+  useEffect(() => {
+    const fetchQuota = async () => {
+      try {
+        const { data } = await filesAPI.getQuota();
+        setQuota(data);
+      } catch {
+        // Silently continue
       }
-      await refreshProfile();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to toggle Email 2FA');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchQuota();
+  }, []);
 
-  // ─── Request Email Verification ───
   const handleRequestVerification = async () => {
     setLoading(true);
     try {
       await authAPI.requestVerification();
-      toast.success('Verification email sent!');
+      toast.success('Verification email sent! Check your inbox.');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to send verification email');
     } finally {
       setLoading(false);
     }
-  };
-
-  // ─── Regenerate Backup Codes ───
-  const handleRegenBackupCodes = async () => {
-    if (!regenCode || regenCode.length !== 6) return toast.error('Enter a valid 6-digit code');
-    setLoading(true);
-    try {
-      const { data } = await authAPI.regenerateBackupCodes(regenCode);
-      setBackupCodes(data.backup_codes);
-      setRegenModal(false);
-      setRegenCode('');
-      toast.success('Backup codes regenerated!');
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Regeneration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyBackupCodes = (codes) => {
-    navigator.clipboard.writeText(codes.join('\n'));
-    toast.success('Copied to clipboard!');
   };
 
   const handleLogoutAll = async () => {
@@ -145,251 +73,245 @@ export default function Settings() {
 
   return (
     <div className="settings-page animate-fade-in">
-      <h1 className="page-title">Settings</h1>
-      <p className="page-subtitle">Manage your account and security</p>
+      <div className="settings-header">
+        <h1 className="page-title">Settings</h1>
+        <p className="page-subtitle">Configure your workspace preferences, profile, and account details.</p>
+      </div>
 
-      {/* Profile Section */}
-      <Card className="settings-section">
-        <div className="settings-section-header">
-          <HiOutlineUser className="settings-section-icon" />
-          <h2>Profile</h2>
-        </div>
-        <div className="settings-rows">
-          <div className="settings-row">
-            <span className="settings-label">Email</span>
-            <span className="settings-value">{user?.email}</span>
-          </div>
-          <div className="settings-row">
-            <span className="settings-label">Account Created</span>
-            <span className="settings-value">
-              {user?.created_at ? format(new Date(user.created_at), 'PPP') : '—'}
-            </span>
-          </div>
-          <div className="settings-row">
-            <span className="settings-label">Email Verified</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Badge variant={user?.email_verified ? 'success' : 'warning'} dot size="sm">
-                {user?.email_verified ? 'Verified' : 'Unverified'}
-              </Badge>
-              {!user?.email_verified && (
-                <Button size="xs" variant="secondary" onClick={handleRequestVerification} loading={loading}>
-                  Verify Email
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Subscription Section */}
-      <Card className="settings-section">
-        <div className="settings-section-header">
-          <HiOutlineSparkles className="settings-section-icon" />
-          <h2>Subscription</h2>
-        </div>
-        <div className="settings-rows">
-          <div className="settings-row">
-            <span className="settings-label">Current Plan</span>
-            <Badge
-              variant={user?.plan === 'pro' ? 'success' : 'default'}
-              dot
-              size="md"
+      <div className="settings-layout">
+        {/* Settings Navigation Tabs */}
+        <div className="settings-nav">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`settings-nav-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              {user?.plan === 'pro' ? 'Pro' : 'Free'}
-            </Badge>
-          </div>
-          <div className="settings-row">
-            <span className="settings-label">Manage</span>
-            <Link to="/pricing">
-              <Button size="sm" variant="secondary" icon={<HiOutlineSparkles />}>
-                {user?.plan === 'pro' ? 'Manage Plan' : 'Upgrade to Pro'}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </Card>
-
-      {/* 2FA Section */}
-      <Card className="settings-section">
-        <div className="settings-section-header">
-          <HiOutlineShieldCheck className="settings-section-icon" />
-          <h2>Two-Factor Authentication</h2>
+              <span className="snav-icon">{tab.icon}</span>
+              <span className="snav-label">{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="settings-row" style={{ marginTop: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <span className="settings-label">Email OTP Authentication</span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Receive a 6-digit code via email when you log in.
-            </span>
-          </div>
-          <Button
-            variant={user?.email_2fa_enabled ? 'danger' : 'primary'}
-            size="sm"
-            onClick={toggleEmail2FA}
-            loading={loading}
-          >
-            {user?.email_2fa_enabled ? 'Disable Email 2FA' : 'Enable Email 2FA'}
-          </Button>
-        </div>
-
-        <div className="settings-section-header" style={{ marginTop: '1rem' }}>
-          <h3>Authenticator App</h3>
-          <Badge
-            variant={user?.totp_enabled ? 'success' : 'default'}
-            dot
-            size="md"
-          >
-            {user?.totp_enabled ? 'Enabled' : 'Disabled'}
-          </Badge>
-        </div>
-
-        {!user?.totp_enabled && setupStep === 0 && (
-          <div className="tfa-setup">
-            <p className="tfa-desc">
-              Add an extra layer of security to your account by enabling two-factor
-              authentication with an authenticator app.
-            </p>
-            <Button
-              icon={<HiOutlineKey />}
-              onClick={handleSetup2FA}
-              loading={loading}
-            >
-              Set Up 2FA
-            </Button>
-          </div>
-        )}
-
-        {/* Step 1: Show QR */}
-        {setupStep === 1 && setupData && (
-          <div className="tfa-qr-step animate-fade-in-up">
-            <p className="tfa-desc">
-              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
-            </p>
-            <div className="tfa-qr-wrap">
-              <img src={setupData.qr_code_base64} alt="2FA QR Code" className="tfa-qr-img" />
-            </div>
-            <p className="tfa-uri-label">Or enter this code manually:</p>
-            <code className="tfa-uri">{setupData.totp_uri}</code>
-
-            <div className="tfa-backup-section">
-              <h4>Backup Codes</h4>
-              <p className="tfa-desc">
-                Save these codes securely. They can be used if you lose access to your authenticator.
-              </p>
-              <div className="tfa-codes-grid">
-                {setupData.backup_codes.map((code, i) => (
-                  <span key={i} className="tfa-code">{code}</span>
-                ))}
+        {/* Settings Tab Content */}
+        <div className="settings-content">
+          {/* Tab 1: Account & Profile */}
+          {activeTab === 'profile' && (
+            <Card className="settings-card animate-fade-in">
+              <div className="card-section-title">
+                <HiOutlineUser />
+                <h2>Account & Profile</h2>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<HiOutlineClipboardCopy />}
-                onClick={() => copyBackupCodes(setupData.backup_codes)}
-              >
-                Copy Codes
-              </Button>
-            </div>
+              <p className="section-desc">
+                Basic identity and communication details registered with DigiVault.
+              </p>
 
-            <div className="tfa-verify-step">
-              <Input
-                id="enable-code"
-                label="Enter 6-digit code from your app to verify"
-                value={enableCode}
-                onChange={(e) => setEnableCode(e.target.value)}
-                placeholder="000000"
-                maxLength={6}
-              />
-              <Button onClick={handleEnable2FA} loading={loading} fullWidth>
-                Enable 2FA
-              </Button>
-            </div>
-          </div>
-        )}
+              <div className="settings-rows">
+                <div className="settings-row">
+                  <span className="settings-label">Email Address</span>
+                  <span className="settings-value">{user?.email}</span>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Registered Since</span>
+                  <span className="settings-value">
+                    {user?.created_at ? format(new Date(user.created_at), 'PPP') : '—'}
+                  </span>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Email Verification</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Badge variant={user?.email_verified ? 'success' : 'warning'} dot size="md">
+                      {user?.email_verified ? 'Verified' : 'Unverified'}
+                    </Badge>
+                    {!user?.email_verified && (
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={handleRequestVerification}
+                        loading={loading}
+                      >
+                        Verify Email Now
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
-        {/* 2FA Enabled — Controls */}
-        {user?.totp_enabled && (
-          <div className="tfa-controls">
-            <Button
-              variant="secondary"
-              icon={<HiOutlineRefresh />}
-              onClick={() => setRegenModal(true)}
-              size="sm"
-            >
-              Regenerate Backup Codes
-            </Button>
-            <Button
-              variant="danger"
-              icon={<HiOutlineShieldCheck />}
-              onClick={() => setDisableModal(true)}
-              size="sm"
-            >
-              Disable 2FA
-            </Button>
-          </div>
-        )}
-      </Card>
+          {/* Tab 2: Appearance */}
+          {activeTab === 'appearance' && (
+            <Card className="settings-card animate-fade-in">
+              <div className="card-section-title">
+                <HiOutlineColorSwatch />
+                <h2>Appearance & Theme</h2>
+              </div>
+              <p className="section-desc">
+                Select your preferred color theme. DigiVault features warm parchment ivory in Light mode and warm charcoal in Dark mode.
+              </p>
 
-      {/* Display regenerated backup codes */}
-      {backupCodes && (
-        <Card className="settings-section animate-fade-in-up">
-          <div className="settings-section-header">
-            <HiOutlineKey className="settings-section-icon" />
-            <h2>New Backup Codes</h2>
-          </div>
-          <p className="tfa-desc">Save these codes securely. Old codes are now invalid.</p>
-          <div className="tfa-codes-grid">
-            {backupCodes.map((code, i) => (
-              <span key={i} className="tfa-code">{code}</span>
-            ))}
-          </div>
-          <Button
-            variant="secondary" size="sm" icon={<HiOutlineClipboardCopy />}
-            onClick={() => copyBackupCodes(backupCodes)}
-          >
-            Copy Codes
-          </Button>
-        </Card>
-      )}
+              <div className="theme-selectors-grid">
+                {/* Light Mode Card */}
+                <div
+                  className={`theme-card theme-card-light ${theme === 'light' ? 'selected' : ''}`}
+                  onClick={() => setTheme('light')}
+                >
+                  <div className="theme-preview light-preview">
+                    <div className="preview-sidebar" />
+                    <div className="preview-body">
+                      <div className="preview-header" />
+                      <div className="preview-accent" />
+                    </div>
+                  </div>
+                  <div className="theme-card-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <HiOutlineSun />
+                      <span className="theme-name">Warm Parchment (Light)</span>
+                    </div>
+                    {theme === 'light' && <HiOutlineCheck className="theme-checked" />}
+                  </div>
+                  <span className="theme-sub">Warm ivory surfaces with terracotta accents.</span>
+                </div>
 
-      {/* Security */}
-      <Card className="settings-section">
-        <div className="settings-section-header">
-          <HiOutlineLogout className="settings-section-icon" />
-          <h2>Sessions</h2>
+                {/* Dark Mode Card */}
+                <div
+                  className={`theme-card theme-card-dark ${theme === 'dark' ? 'selected' : ''}`}
+                  onClick={() => setTheme('dark')}
+                >
+                  <div className="theme-preview dark-preview">
+                    <div className="preview-sidebar" />
+                    <div className="preview-body">
+                      <div className="preview-header" />
+                      <div className="preview-accent" />
+                    </div>
+                  </div>
+                  <div className="theme-card-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <HiOutlineMoon />
+                      <span className="theme-name">Warm Charcoal (Dark)</span>
+                    </div>
+                    {theme === 'dark' && <HiOutlineCheck className="theme-checked" />}
+                  </div>
+                  <span className="theme-sub">Deep warm charcoal without harsh neon blues.</span>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Tab 3: Storage & Quota */}
+          {activeTab === 'storage' && (
+            <Card className="settings-card animate-fade-in">
+              <div className="card-section-title">
+                <HiOutlineCloud />
+                <h2>Storage & Usage Status</h2>
+              </div>
+              <p className="section-desc">
+                Review your current vault utilization and storage limits.
+              </p>
+
+              {quota && (
+                <div style={{ marginTop: 16 }}>
+                  <StorageQuotaBar quota={quota} />
+                </div>
+              )}
+
+              <div className="settings-rows" style={{ marginTop: 24 }}>
+                <div className="settings-row">
+                  <span className="settings-label">Current Plan Allocation</span>
+                  <span className="settings-value">
+                    {user?.plan === 'pro' ? '25 GB Encrypted Cloud' : '500 MB Free Tier'}
+                  </span>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Need More Storage?</span>
+                  <Link to="/pricing">
+                    <Button size="sm" variant="primary" icon={<HiOutlineSparkles />}>
+                      Upgrade to Pro
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Tab 4: Subscription & Billing */}
+          {activeTab === 'subscription' && (
+            <Card className="settings-card animate-fade-in">
+              <div className="card-section-title">
+                <HiOutlineSparkles />
+                <h2>Subscription & Plan</h2>
+              </div>
+              <p className="section-desc">
+                Manage your DigiVault plan, billing interval, and features.
+              </p>
+
+              <div className="settings-rows">
+                <div className="settings-row">
+                  <span className="settings-label">Current Membership</span>
+                  <Badge variant={user?.plan === 'pro' ? 'success' : 'default'} dot size="md">
+                    {user?.plan === 'pro' ? 'DigiVault Pro' : 'Free Tier'}
+                  </Badge>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Plan Details</span>
+                  <Link to="/pricing">
+                    <Button size="sm" variant="secondary" icon={<HiOutlineSparkles />}>
+                      {user?.plan === 'pro' ? 'Manage Plan Details' : 'Upgrade to Pro'}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Tab 5: Security Overview */}
+          {activeTab === 'security' && (
+            <Card className="settings-card animate-fade-in">
+              <div className="card-section-title">
+                <HiOutlineShieldCheck />
+                <h2>Security Overview</h2>
+              </div>
+              <p className="section-desc">
+                Two-factor authentication, verified recovery channels, and device sessions.
+              </p>
+
+              <div className="settings-rows">
+                <div className="settings-row">
+                  <span className="settings-label">Authenticator App (2FA)</span>
+                  <Badge variant={user?.totp_enabled ? 'success' : 'default'} dot size="md">
+                    {user?.totp_enabled ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Email OTP Verification</span>
+                  <Badge variant={user?.email_2fa_enabled ? 'success' : 'default'} dot size="md">
+                    {user?.email_2fa_enabled ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Security Center</span>
+                  <Link to="/security">
+                    <Button size="sm" variant="primary" icon={<HiOutlineShieldCheck />}>
+                      Open Security Center →
+                    </Button>
+                  </Link>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-label">Session Controls</span>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    icon={<HiOutlineLogout />}
+                    onClick={handleLogoutAll}
+                  >
+                    Logout All Devices
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
-        <p className="tfa-desc">Log out from all devices and sessions.</p>
-        <Button variant="danger" size="sm" icon={<HiOutlineLogout />} onClick={handleLogoutAll}>
-          Logout All Devices
-        </Button>
-      </Card>
-
-      {/* Disable 2FA Modal */}
-      <Modal isOpen={disableModal} onClose={() => setDisableModal(false)} title="Disable 2FA" size="sm">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p className="tfa-desc">To disable 2FA, confirm with your password and a 2FA code or backup code.</p>
-          <Input id="d2fa-pass" label="Password" type="password" value={disablePassword}
-            onChange={(e) => setDisablePassword(e.target.value)} />
-          <Input id="d2fa-code" label="2FA Code or Backup Code" value={disableCode}
-            onChange={(e) => setDisableCode(e.target.value)} maxLength={8} />
-          <Button variant="danger" fullWidth onClick={handleDisable2FA} loading={loading}>
-            Disable 2FA
-          </Button>
-        </div>
-      </Modal>
-
-      {/* Regen Modal */}
-      <Modal isOpen={regenModal} onClose={() => setRegenModal(false)} title="Regenerate Backup Codes" size="sm">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p className="tfa-desc">Confirm with a 6-digit code from your authenticator app. Old codes will be invalidated.</p>
-          <Input id="regen-code" label="2FA Code" value={regenCode}
-            onChange={(e) => setRegenCode(e.target.value)} maxLength={6} />
-          <Button fullWidth onClick={handleRegenBackupCodes} loading={loading}>
-            Regenerate Codes
-          </Button>
-        </div>
-      </Modal>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { meetingsAPI } from '../api/meetings';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -9,9 +9,15 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import VideoCall from '../components/VideoCall';
 import {
-  HiOutlinePlus, HiOutlineCalendar, HiOutlineTrash,
-  HiOutlinePencil, HiOutlinePhone, HiOutlineLocationMarker,
-  HiOutlineUserGroup, HiOutlineClock, HiOutlineClipboardCopy,
+  HiOutlinePlus,
+  HiOutlineCalendar,
+  HiOutlineTrash,
+  HiOutlinePencil,
+  HiOutlinePhone,
+  HiOutlineLocationMarker,
+  HiOutlineUserGroup,
+  HiOutlineClock,
+  HiOutlineClipboardCopy,
   HiOutlineLink,
 } from 'react-icons/hi';
 import { format, isPast } from 'date-fns';
@@ -30,11 +36,17 @@ export default function Meetings() {
   const [joinModal, setJoinModal] = useState(false);
   const [joinLink, setJoinLink] = useState('');
   const [formData, setFormData] = useState({
-    title: '', meeting_date: '', duration_minutes: 30,
-    location: '', attendees: '', agenda: '', notes: '', summary: '',
+    title: '',
+    meeting_date: '',
+    duration_minutes: 30,
+    location: '',
+    attendees: '',
+    agenda: '',
+    notes: '',
+    summary: '',
   });
 
-  const loadMeetings = async () => {
+  const loadMeetings = useCallback(async () => {
     try {
       const { data } = await meetingsAPI.list(showUpcoming);
       setMeetings(data);
@@ -43,9 +55,11 @@ export default function Meetings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showUpcoming]);
 
-  useEffect(() => { setLoading(true); loadMeetings(); }, [showUpcoming]);
+  useEffect(() => {
+    loadMeetings();
+  }, [loadMeetings]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -58,17 +72,19 @@ export default function Meetings() {
     try {
       const payload = {
         ...formData,
-        attendees: formData.attendees ? formData.attendees.split(',').map((a) => a.trim()).filter(Boolean) : [],
+        attendees: formData.attendees
+          ? formData.attendees.split(',').map((a) => a.trim()).filter(Boolean)
+          : [],
         duration_minutes: formData.duration_minutes || null,
         meeting_date: new Date(formData.meeting_date).toISOString(),
       };
       await meetingsAPI.create(payload);
-      toast.success('Meeting created!');
+      toast.success('Meeting scheduled!');
       setCreateModal(false);
       resetForm();
       loadMeetings();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to create');
+      toast.error(err.response?.data?.detail || 'Failed to create meeting');
     }
   };
 
@@ -81,9 +97,10 @@ export default function Meetings() {
     try {
       const payload = {
         ...formData,
-        attendees: typeof formData.attendees === 'string'
-          ? formData.attendees.split(',').map((a) => a.trim()).filter(Boolean)
-          : formData.attendees,
+        attendees:
+          typeof formData.attendees === 'string'
+            ? formData.attendees.split(',').map((a) => a.trim()).filter(Boolean)
+            : formData.attendees,
         duration_minutes: formData.duration_minutes || null,
         meeting_date: new Date(formData.meeting_date).toISOString(),
       };
@@ -124,8 +141,14 @@ export default function Meetings() {
 
   const resetForm = () => {
     setFormData({
-      title: '', meeting_date: '', duration_minutes: 30,
-      location: '', attendees: '', agenda: '', notes: '', summary: '',
+      title: '',
+      meeting_date: '',
+      duration_minutes: 30,
+      location: '',
+      attendees: '',
+      agenda: '',
+      notes: '',
+      summary: '',
     });
   };
 
@@ -140,7 +163,7 @@ export default function Meetings() {
 
   const handleJoinFromLink = () => {
     let id = joinLink.trim();
-    if (!id) return toast.error('Please enter a link or ID');
+    if (!id) return toast.error('Please enter a meeting link or ID');
     if (id.includes('/meetings/join/')) {
       id = id.split('/meetings/join/')[1].split('/')[0].split('?')[0];
     }
@@ -155,59 +178,108 @@ export default function Meetings() {
 
   return (
     <div className="meetings-page animate-fade-in">
-      <div className="files-header">
+      <div className="meetings-header">
         <div>
           <h1 className="page-title">Meetings</h1>
-          <p className="page-subtitle">Schedule and manage your meetings</p>
+          <p className="page-subtitle">Schedule private video sessions and manage collaboration agendas.</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Button icon={<HiOutlineLink />} size="sm" variant="secondary" onClick={() => setJoinModal(true)}>
-            Join from Link
+        <div className="meetings-actions">
+          <Button
+            icon={<HiOutlineLink />}
+            size="md"
+            variant="secondary"
+            onClick={() => setJoinModal(true)}
+          >
+            Join with ID
           </Button>
-          <Button icon={<HiOutlinePlus />} size="sm" onClick={() => { resetForm(); setCreateModal(true); }}>
+          <Button
+            icon={<HiOutlinePlus />}
+            size="md"
+            variant="primary"
+            onClick={() => {
+              resetForm();
+              setCreateModal(true);
+            }}
+          >
             New Meeting
           </Button>
         </div>
       </div>
 
-      {/* Toggle */}
-      <div className="project-filters" style={{ marginBottom: 20 }}>
-        <button className={`filter-btn ${showUpcoming ? 'filter-active' : ''}`} onClick={() => setShowUpcoming(true)}>
-          Upcoming
+      {/* Tabs */}
+      <div className="meeting-tabs">
+        <button
+          className={`tab-btn ${showUpcoming ? 'active' : ''}`}
+          onClick={() => setShowUpcoming(true)}
+        >
+          Upcoming Sessions
         </button>
-        <button className={`filter-btn ${!showUpcoming ? 'filter-active' : ''}`} onClick={() => setShowUpcoming(false)}>
-          Past
+        <button
+          className={`tab-btn ${!showUpcoming ? 'active' : ''}`}
+          onClick={() => setShowUpcoming(false)}
+        >
+          Past Sessions
         </button>
       </div>
 
       {loading ? (
-        <div className="files-loading"><div className="spinner" /></div>
+        <div className="meetings-loading">
+          <div className="spinner" />
+        </div>
       ) : meetings.length === 0 ? (
         <EmptyState
           icon={<HiOutlineCalendar />}
           title={showUpcoming ? 'No upcoming meetings' : 'No past meetings'}
-          description="Create a meeting to get started"
+          description={
+            showUpcoming
+              ? 'Schedule your next meeting to sync with collaborators securely.'
+              : 'Completed meeting records will appear here.'
+          }
           action={
-            <Button icon={<HiOutlinePlus />} size="sm" onClick={() => { resetForm(); setCreateModal(true); }}>
-              Schedule Meeting
-            </Button>
+            showUpcoming && (
+              <Button
+                icon={<HiOutlinePlus />}
+                size="sm"
+                onClick={() => {
+                  resetForm();
+                  setCreateModal(true);
+                }}
+              >
+                Schedule Session
+              </Button>
+            )
           }
         />
       ) : (
         <div className="meetings-list stagger-children">
           {meetings.map((meeting) => (
-            <Card key={meeting.id} className="meeting-card" hover onClick={() => setDetailModal(meeting)}>
+            <Card
+              key={meeting.id}
+              className="meeting-card"
+              hover
+              onClick={() => setDetailModal(meeting)}
+            >
               <div className="meeting-card-left">
-                <div className={`meeting-date-badge ${isPast(new Date(meeting.meeting_date)) ? 'meeting-past' : ''}`}>
-                  <span className="mdb-month">{format(new Date(meeting.meeting_date), 'MMM')}</span>
-                  <span className="mdb-day">{format(new Date(meeting.meeting_date), 'd')}</span>
+                <div
+                  className={`meeting-date-badge ${
+                    isPast(new Date(meeting.meeting_date)) ? 'meeting-past' : ''
+                  }`}
+                >
+                  <span className="mdb-month">
+                    {format(new Date(meeting.meeting_date), 'MMM')}
+                  </span>
+                  <span className="mdb-day">
+                    {format(new Date(meeting.meeting_date), 'd')}
+                  </span>
                 </div>
                 <div className="meeting-info">
-                  <h3 className="meeting-title truncate">{meeting.title}</h3>
+                  <h3 className="meeting-title truncate" title={meeting.title}>
+                    {meeting.title}
+                  </h3>
                   <div className="meeting-meta-row">
                     <span className="meeting-meta-item">
                       <HiOutlineClock /> {format(new Date(meeting.meeting_date), 'h:mm a')}
-                      {meeting.duration_minutes && ` · ${meeting.duration_minutes}min`}
+                      {meeting.duration_minutes && ` · ${meeting.duration_minutes}m`}
                     </span>
                     {meeting.location && (
                       <span className="meeting-meta-item">
@@ -216,26 +288,43 @@ export default function Meetings() {
                     )}
                     {meeting.attendees?.length > 0 && (
                       <span className="meeting-meta-item">
-                        <HiOutlineUserGroup /> {meeting.attendees.length} attendees
+                        <HiOutlineUserGroup /> {meeting.attendees.length} attendee(s)
                       </span>
                     )}
                   </div>
                 </div>
               </div>
+
               <div className="meeting-card-actions" onClick={(e) => e.stopPropagation()}>
                 {!isPast(new Date(meeting.meeting_date)) && (
-                  <Button variant="primary" size="sm" icon={<HiOutlinePhone />}
-                    onClick={() => setCallMeetingId(meeting.id)}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<HiOutlinePhone />}
+                    onClick={() => setCallMeetingId(meeting.id)}
+                  >
                     Join
                   </Button>
                 )}
-                <button className="meeting-action-btn" onClick={() => copyMeetingLink(meeting.id)} title="Copy meeting link">
+                <button
+                  className="meeting-action-btn"
+                  onClick={() => copyMeetingLink(meeting.id)}
+                  title="Copy meeting invitation link"
+                >
                   <HiOutlineClipboardCopy />
                 </button>
-                <button className="meeting-action-btn" onClick={() => openEdit(meeting)} title="Edit">
+                <button
+                  className="meeting-action-btn"
+                  onClick={() => openEdit(meeting)}
+                  title="Edit session details"
+                >
                   <HiOutlinePencil />
                 </button>
-                <button className="meeting-action-btn" onClick={() => setDeleteConfirm(meeting)} title="Delete">
+                <button
+                  className="meeting-action-btn action-delete"
+                  onClick={() => setDeleteConfirm(meeting)}
+                  title="Delete meeting"
+                >
                   <HiOutlineTrash />
                 </button>
               </div>
@@ -245,27 +334,43 @@ export default function Meetings() {
       )}
 
       {/* Detail Modal */}
-      <Modal isOpen={!!detailModal} onClose={() => setDetailModal(null)} title={detailModal?.title || 'Meeting'} size="lg">
+      <Modal
+        isOpen={!!detailModal}
+        onClose={() => setDetailModal(null)}
+        title={detailModal?.title || 'Meeting Details'}
+        size="lg"
+      >
         {detailModal && (
           <div className="meeting-detail">
-            {/* Meeting Link */}
+            {/* Share link card */}
             <div className="meeting-link-box">
               <HiOutlineLink className="meeting-link-icon" />
               <code className="meeting-link-url">{getMeetingLink(detailModal.id)}</code>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <Button variant="secondary" size="sm" icon={<HiOutlineClipboardCopy />}
-                  onClick={() => copyMeetingLink(detailModal.id)}>
-                  Copy
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<HiOutlineClipboardCopy />}
+                  onClick={() => copyMeetingLink(detailModal.id)}
+                >
+                  Copy Link
                 </Button>
-                <Button variant="primary" size="sm" icon={<HiOutlinePhone />}
-                  onClick={() => setCallMeetingId(detailModal.id)}>
-                  Join
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<HiOutlinePhone />}
+                  onClick={() => setCallMeetingId(detailModal.id)}
+                >
+                  Start Call
                 </Button>
               </div>
             </div>
+
             <div className="md-row">
               <span className="md-label">Date & Time</span>
-              <span className="md-value">{format(new Date(detailModal.meeting_date), 'PPPpp')}</span>
+              <span className="md-value">
+                {format(new Date(detailModal.meeting_date), 'PPPpp')}
+              </span>
             </div>
             {detailModal.duration_minutes && (
               <div className="md-row">
@@ -275,7 +380,7 @@ export default function Meetings() {
             )}
             {detailModal.location && (
               <div className="md-row">
-                <span className="md-label">Location</span>
+                <span className="md-label">Location / Platform</span>
                 <span className="md-value">{detailModal.location}</span>
               </div>
             )}
@@ -283,7 +388,11 @@ export default function Meetings() {
               <div className="md-row">
                 <span className="md-label">Attendees</span>
                 <div className="md-tags">
-                  {detailModal.attendees.map((a, i) => <Badge key={i} variant="primary" size="sm">{a}</Badge>)}
+                  {detailModal.attendees.map((a, i) => (
+                    <Badge key={i} variant="default" size="sm">
+                      {a}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             )}
@@ -295,7 +404,7 @@ export default function Meetings() {
             )}
             {detailModal.notes && (
               <div className="md-row md-block">
-                <span className="md-label">Notes</span>
+                <span className="md-label">Meeting Notes</span>
                 <p className="md-text">{detailModal.notes}</p>
               </div>
             )}
@@ -312,7 +421,9 @@ export default function Meetings() {
                   {detailModal.action_items.map((item, i) => (
                     <li key={i} className={item.completed ? 'md-action-done' : ''}>
                       {item.task}
-                      {item.assignee && <span className="md-action-assignee">— {item.assignee}</span>}
+                      {item.assignee && (
+                        <span className="md-action-assignee">— {item.assignee}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -323,53 +434,108 @@ export default function Meetings() {
       </Modal>
 
       {/* Join Meeting Modal */}
-      <Modal isOpen={joinModal} onClose={() => setJoinModal(false)} title="Join Meeting from Link">
+      <Modal
+        isOpen={joinModal}
+        onClose={() => setJoinModal(false)}
+        title="Join Meeting Session"
+        size="sm"
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Paste a meeting link or meeting ID below to join directly.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+            Paste a meeting URL or channel ID to connect directly to the call.
           </p>
-          <Input 
-            label="Meeting Link or ID" 
-            placeholder="e.g. http://localhost:5173/meetings/join/123..." 
+          <Input
+            id="join-meeting-input"
+            label="Meeting URL or ID"
+            placeholder="e.g. 98ab-341... or full URL"
             value={joinLink}
             onChange={(e) => setJoinLink(e.target.value)}
             autoFocus
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
-            <Button variant="secondary" onClick={() => setJoinModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleJoinFromLink}>Join Meeting</Button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+            <Button variant="secondary" onClick={() => setJoinModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleJoinFromLink}>
+              Join Session
+            </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Create/Edit Modal */}
+      {/* Create / Edit Modal */}
       <Modal
         isOpen={createModal || !!editModal}
-        onClose={() => { setCreateModal(false); setEditModal(null); }}
-        title={editModal ? 'Edit Meeting' : 'New Meeting'}
+        onClose={() => {
+          setCreateModal(false);
+          setEditModal(null);
+        }}
+        title={editModal ? 'Edit Meeting Session' : 'Schedule New Meeting'}
       >
-        <form onSubmit={editModal ? handleUpdate : handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input id="mt-title" label="Title" value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Team Standup" autoFocus />
-          <Input id="mt-date" label="Date & Time" type="datetime-local" value={formData.meeting_date}
-            onChange={(e) => setFormData({ ...formData, meeting_date: e.target.value })} 
-            min={format(new Date(), "yyyy-MM-dd'T'HH:mm")} />
+        <form
+          onSubmit={editModal ? handleUpdate : handleCreate}
+          style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+        >
+          <Input
+            id="mt-title-input"
+            label="Session Title"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="e.g. Vault Architecture Review"
+            autoFocus
+          />
+          <Input
+            id="mt-date-input"
+            label="Date & Time"
+            type="datetime-local"
+            value={formData.meeting_date}
+            onChange={(e) => setFormData({ ...formData, meeting_date: e.target.value })}
+            min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
+          />
           <div style={{ display: 'flex', gap: 12 }}>
-            <Input id="mt-duration" label="Duration (min)" type="number" value={formData.duration_minutes}
-              onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
-              style={{ flex: 1 }} />
-            <Input id="mt-location" label="Location" value={formData.location}
+            <Input
+              id="mt-duration-input"
+              label="Duration (min)"
+              type="number"
+              value={formData.duration_minutes}
+              onChange={(e) =>
+                setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })
+              }
+              style={{ flex: 1 }}
+            />
+            <Input
+              id="mt-location-input"
+              label="Location / Room"
+              value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="Zoom / Room 3" style={{ flex: 1 }} />
+              placeholder="Integrated Video / Room 1"
+              style={{ flex: 1 }}
+            />
           </div>
-          <Input id="mt-attendees" label="Attendees (comma separated)" value={formData.attendees}
+          <Input
+            id="mt-attendees-input"
+            label="Attendees (comma separated emails)"
+            value={formData.attendees}
             onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-            placeholder="alice@mail.com, bob@mail.com" />
-          <TextArea id="mt-agenda" label="Agenda" value={formData.agenda}
-            onChange={(e) => setFormData({ ...formData, agenda: e.target.value })} placeholder="Meeting agenda..." />
-          <TextArea id="mt-notes" label="Notes" value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Meeting notes..." />
-          <Button type="submit" fullWidth>{editModal ? 'Save Changes' : 'Create Meeting'}</Button>
+            placeholder="alice@domain.com, bob@domain.com"
+          />
+          <TextArea
+            id="mt-agenda-input"
+            label="Agenda"
+            value={formData.agenda}
+            onChange={(e) => setFormData({ ...formData, agenda: e.target.value })}
+            placeholder="Items to discuss..."
+          />
+          <TextArea
+            id="mt-notes-input"
+            label="Notes"
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Optional preparatory notes..."
+          />
+          <Button type="submit" fullWidth>
+            {editModal ? 'Save Session Changes' : 'Schedule Meeting'}
+          </Button>
         </form>
       </Modal>
 
@@ -378,7 +544,8 @@ export default function Meetings() {
         onClose={() => setDeleteConfirm(null)}
         onConfirm={handleDelete}
         title="Delete Meeting"
-        message={`Delete "${deleteConfirm?.title}"? This cannot be undone.`}
+        message={`Delete session "${deleteConfirm?.title}"? This cannot be undone.`}
+        confirmText="Delete"
       />
     </div>
   );
