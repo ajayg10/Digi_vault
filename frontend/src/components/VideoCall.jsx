@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { meetingsAPI } from '../api/meetings';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
@@ -23,32 +23,28 @@ export default function VideoCall({ meetingId, onEnd }) {
   const localTrackRef = useRef({ audioTrack: null, videoTrack: null });
   const containerRef = useRef(null);
 
-  useEffect(() => {
-    fetchToken();
-    return () => { leaveCall(); };
-  }, [meetingId]);
-
-  useEffect(() => {
-    let interval;
-    if (joined) {
-      fetchParticipants();
-      interval = setInterval(fetchParticipants, 5000);
+  const leaveCall = useCallback(async () => {
+    const { audioTrack, videoTrack } = localTrackRef.current;
+    if (audioTrack) { audioTrack.close(); }
+    if (videoTrack) { videoTrack.close(); }
+    if (clientRef.current) {
+      await clientRef.current.leave();
     }
-    return () => clearInterval(interval);
-  }, [joined, meetingId]);
+    setJoined(false);
+  }, []);
 
-  const fetchToken = async () => {
+  const fetchToken = useCallback(async () => {
     try {
       const { data } = await meetingsAPI.getCallToken(meetingId);
       setTokenData(data);
       setLoading(false);
-    } catch (err) {
+    } catch {
       toast.error('Failed to get call token');
       onEnd();
     }
-  };
+  }, [meetingId, onEnd]);
 
-  const fetchParticipants = async () => {
+  const fetchParticipants = useCallback(async () => {
     try {
       const { data } = await meetingsAPI.getParticipants(meetingId);
       setParticipants(data);
@@ -60,10 +56,24 @@ export default function VideoCall({ meetingId, onEnd }) {
           label.innerText = p.email;
         }
       });
-    } catch (err) {
+    } catch {
       // silent fail for polling
     }
-  };
+  }, [meetingId]);
+
+  useEffect(() => {
+    fetchToken();
+    return () => { leaveCall(); };
+  }, [fetchToken, leaveCall]);
+
+  useEffect(() => {
+    let interval;
+    if (joined) {
+      fetchParticipants();
+      interval = setInterval(fetchParticipants, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [joined, fetchParticipants]);
 
   const joinCall = async (withVideo = true) => {
     if (!tokenData) return;
@@ -141,16 +151,6 @@ export default function VideoCall({ meetingId, onEnd }) {
     }
   };
 
-  const leaveCall = async () => {
-    const { audioTrack, videoTrack } = localTrackRef.current;
-    if (audioTrack) { audioTrack.close(); }
-    if (videoTrack) { videoTrack.close(); }
-    if (clientRef.current) {
-      await clientRef.current.leave();
-    }
-    setJoined(false);
-  };
-
   const toggleAudio = () => {
     const { audioTrack } = localTrackRef.current;
     if (audioTrack) {
@@ -176,7 +176,7 @@ export default function VideoCall({ meetingId, onEnd }) {
           await clientRef.current.publish([videoTrack]);
         }
         setVideoMuted(false);
-      } catch (err) {
+      } catch {
         toast.error('Could not access camera');
       }
     }

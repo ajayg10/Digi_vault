@@ -10,6 +10,9 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 logger = logging.getLogger(__name__)
 
+# Frontend URL for email links (set FRONTEND_URL in HF Secrets)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", ""),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),
@@ -60,8 +63,7 @@ async def send_verification_email(to_email: str, token: str):
     """
     Sends an email verification link to the user.
     """
-    # Assuming frontend is at http://localhost:5173
-    verify_url = f"http://localhost:5173/verify-email?token={token}"
+    verify_url = f"{FRONTEND_URL}/verify-email?token={token}"
     
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
@@ -95,7 +97,7 @@ async def send_password_reset_email(to_email: str, token: str):
     """
     Sends a password reset link to the user.
     """
-    reset_url = f"http://localhost:5173/reset-password?token={token}"
+    reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
     
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">

@@ -3,9 +3,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
+  min-height: 75vh;
   gap: 20px;
-  padding: 20px;
+  padding: 10px;
 }
 
 .call-header {
@@ -13,12 +13,14 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 900px;
+  max-width: 960px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .call-header h2 {
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -28,17 +30,18 @@
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
-  max-width: 900px;
+  max-width: 960px;
 }
 
 .local-video {
-  width: 400px;
-  height: 300px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-lg);
+  width: 420px;
+  height: 315px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border-default);
   position: relative;
+  box-shadow: var(--shadow-sm);
 }
 
 .call-preview {
@@ -49,40 +52,45 @@
   height: 100%;
   gap: 16px;
   color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .remote-videos-grid {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
 .remote-video {
-  width: 300px;
-  height: 225px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-lg);
+  width: 320px;
+  height: 240px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border-default);
+  position: relative;
+  box-shadow: var(--shadow-sm);
 }
 
 .call-controls {
   display: flex;
   gap: 12px;
-  padding: 16px 24px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-xl);
+  padding: 12px 24px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
   border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-md);
 }
 
 .call-ctrl {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: none;
-  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-default);
+  background: var(--bg-secondary);
   color: var(--text-primary);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -91,21 +99,24 @@
 }
 
 .call-ctrl:hover {
-  background: var(--bg-card-hover);
+  background: var(--bg-secondary-hover);
+  border-color: var(--border-strong);
 }
 
 .call-ctrl-off {
   background: var(--danger-soft);
   color: var(--danger);
+  border-color: rgba(184, 74, 74, 0.3);
 }
 
 .call-ctrl-end {
-  background: var(--danger);
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
 }
 
 .call-ctrl-end:hover {
-  background: #dc2626;
+  background: var(--accent-hover);
 }
 
 /* Sidebar and Layout Styles */
@@ -126,13 +137,14 @@
 
 .participants-sidebar {
   width: 300px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  height: 80vh;
+  height: 75vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .participants-header {
@@ -144,8 +156,8 @@
 }
 
 .participants-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--text-primary);
   margin: 0;
 }
@@ -153,8 +165,8 @@
 .close-btn {
   background: transparent;
   border: none;
-  color: var(--text-secondary);
-  font-size: 1.5rem;
+  color: var(--text-tertiary);
+  font-size: 1.4rem;
   cursor: pointer;
 }
 
@@ -163,61 +175,57 @@
 }
 
 .participants-list {
-  padding: 16px;
+  padding: 14px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .participant-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-subtle);
 }
 
 .participant-avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--accent);
-  color: white;
+  color: var(--accent-contrast);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 0.82rem;
 }
 
 .participant-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .participant-name {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--text-primary);
-}
-
-.remote-video {
-  width: 300px;
-  height: 225px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border-default);
-  position: relative;
 }
 
 .remote-video-label {
   position: absolute;
   bottom: 8px;
   left: 8px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  background: rgba(25, 24, 23, 0.75);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 0.75rem;
+  font-weight: 500;
   z-index: 10;
   backdrop-filter: blur(4px);
 }

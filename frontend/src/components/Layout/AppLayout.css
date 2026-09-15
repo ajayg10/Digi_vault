@@ -1,19 +1,43 @@
 .app-layout {
   display: flex;
   min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.app-body {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  transition: margin-left var(--transition-slow);
 }
 
 .app-main {
-  margin-left: var(--sidebar-width);
   flex: 1;
-  min-height: 100vh;
-  padding: 32px 40px;
+  padding: 32px 40px 48px;
   overflow-y: auto;
 }
 
-@media (max-width: 768px) {
-  .app-main {
+.app-content-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .app-body {
     margin-left: 0;
-    padding: 72px 16px 24px;
+  }
+  .app-main {
+    padding: 24px 20px 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-main {
+    padding: 18px 14px 32px;
   }
 }

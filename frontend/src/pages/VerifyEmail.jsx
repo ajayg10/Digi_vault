@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { authAPI } from '../api/auth';
-import { HiOutlineCheckCircle, HiOutlineXCircle } from 'react-icons/hi';
+import { HiOutlineCheckCircle, HiOutlineXCircle, HiOutlineShieldCheck } from 'react-icons/hi';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
+import './Auth.css';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -16,14 +17,14 @@ export default function VerifyEmail() {
     const verify = async () => {
       if (!token) {
         setStatus('error');
-        setMessage('Invalid verification link.');
+        setMessage('Invalid or missing verification token.');
         return;
       }
 
       try {
         await authAPI.confirmVerification(token);
         setStatus('success');
-        setMessage('Your email has been successfully verified!');
+        setMessage('Your email address has been successfully verified.');
         toast.success('Email verified!');
       } catch (err) {
         setStatus('error');
@@ -36,30 +37,37 @@ export default function VerifyEmail() {
   }, [token]);
 
   return (
-    <div className="auth-page animate-fade-in">
-      <div className="auth-card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-        <div className="auth-header">
-          <div className="auth-logo">
+    <div className="auth-page">
+      <div className="auth-card animate-fade-in-scale" style={{ textAlign: 'center' }}>
+        <div className="auth-logo">
+          <div className="auth-brand-emblem">
             {status === 'success' ? (
-              <HiOutlineCheckCircle style={{ fontSize: '4rem', color: 'var(--success)' }} />
+              <HiOutlineCheckCircle style={{ fontSize: '2rem', color: 'var(--security)' }} />
             ) : status === 'error' ? (
-              <HiOutlineXCircle style={{ fontSize: '4rem', color: 'var(--danger)' }} />
+              <HiOutlineXCircle style={{ fontSize: '2rem', color: 'var(--danger)' }} />
             ) : (
-              <div className="spinner" style={{ width: '4rem', height: '4rem' }} />
+              <div className="spinner" style={{ width: '28px', height: '28px' }} />
             )}
           </div>
-          <h1 className="auth-logo-title" style={{ marginTop: '1.5rem' }}>
-            {status === 'success' ? 'Email Verified' : status === 'error' ? 'Verification Failed' : 'Verifying...'}
+          <h1 className="auth-logo-title">
+            {status === 'success'
+              ? 'Email Confirmed'
+              : status === 'error'
+              ? 'Verification Unsuccessful'
+              : 'Verifying Address...'}
           </h1>
-          <p className="auth-subtitle" style={{ marginTop: '1rem', fontSize: '1.1rem' }}>
-            {message}
-          </p>
+          <p className="auth-subtitle">{message}</p>
         </div>
 
-        <div style={{ marginTop: '2rem' }}>
-          <Button variant="primary" fullWidth onClick={() => navigate('/login')}>
-            {status === 'success' ? 'Go to Login' : 'Back to Login'}
+        <div style={{ marginTop: '24px' }}>
+          <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/login')}>
+            {status === 'success' ? 'Proceed to Sign In' : 'Back to Sign In'}
           </Button>
+        </div>
+
+        <div className="auth-trust-badge">
+          <HiOutlineShieldCheck />
+          <span>Account Safeguard Protocol</span>
         </div>
       </div>
     </div>

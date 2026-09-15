@@ -27,7 +27,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React/Vite
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://digi-vault-r2kv.vercel.app",
+        # Replace with your actual HF space URL after deploying:
+        # "https://ajayg10-digivault-backend.hf.space",
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Covers all Vercel preview URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

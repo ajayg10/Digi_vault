@@ -1,15 +1,16 @@
 .upload-zone {
   border: 2px dashed var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: 32px;
+  border-radius: var(--radius-md);
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: all var(--transition-default);
-  background: var(--bg-card);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  background: var(--bg-surface);
+  text-align: center;
 }
 
 .upload-zone:hover,
@@ -19,32 +20,36 @@
 }
 
 .upload-zone-uploading {
-  opacity: 0.6;
+  opacity: 0.65;
   pointer-events: none;
 }
 
 .upload-icon {
-  font-size: 2.5rem;
-  color: var(--text-muted);
-  transition: color var(--transition-default);
+  font-size: 2.25rem;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
 .upload-zone:hover .upload-icon,
 .upload-zone-active .upload-icon {
   color: var(--accent);
+  transform: translateY(-2px);
 }
 
 .upload-text {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .upload-browse {
   color: var(--accent);
-  font-weight: 500;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .upload-hint {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
 }
